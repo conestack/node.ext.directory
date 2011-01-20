@@ -1,0 +1,105 @@
+
+Directory
+=========
+
+The Directory maps directly a filesystem directory. The implementation fits 
+the contract for ``agx.core.interfaces.ISource``,
+``agx.core.interfaces.ITarget`` and ``agx.io.directory.interfaces.IDirectory``.
+
+Create a directory.
+::
+
+  >>> from agx.io.directory import Directory
+
+Create a temporary test directory to test the handler.
+::
+
+  >>> import tempfile
+  >>> tempdir = tempfile.mkdtemp()
+
+We need a mock IFile implementation.
+::
+
+  >>> import os
+  >>> from zope.interface import implements
+  >>> from agx.io.directory.interfaces import IFile
+  >>> from zodict.node import Node
+  >>> class File(Node):
+  ...     implements(IFile)
+  ...     __repr__ = object.__repr__
+  ...     def __call__(self):
+  ...         f = file(self.abspath, "w")
+  ...         f.write("#\n")
+  ...         f.close()
+  ...     @property
+  ...     def abspath(self):
+  ...         return os.path.sep.join(self.path)
+
+Create the directory passing the path of the temporary directory. The directory
+must always be called at the root for writing. Otherwise a RuntimeError is 
+raised.
+
+``backup=True`` on init causes the directory to create backup files of existing
+files with the postfix ``.bak``.
+::
+
+  >>> rootdir = os.path.join(tempdir, "root")
+  >>> rootdir
+  '...root'
+  
+  >>> directory = Directory(rootdir, backup=True)
+
+  >>> directory['profile'] = None
+  >>> directory['profile']
+  <agx.io.directory.directory.Directory object at ...>
+  
+  >>> directory['profile'].path
+  ['...root', 'profile']
+
+  >>> directory['profile']['types'] = None
+  >>> directory['profile']['types'] 
+  <agx.io.directory.directory.Directory object at ...>
+
+  >>> directory['__init__.py'] = File('some_template')
+  >>> directory['__init__.py']
+  <File object at ...>
+
+Tell the handler to dump itself.
+::
+
+  >>> directory()
+
+Check if the directory contents were created.
+::
+
+  >>> os.path.exists(os.path.join(rootdir, 'profile', 'types'))
+  True
+  
+  >>> os.path.exists(os.path.join(rootdir, '__init__.py'))
+  True
+
+Call the directory again now, it creates a backup of the existing
+templates, in our case just one.
+::
+
+  >>> directory()
+  >>> file(os.path.join(rootdir, '__init__.py.bak')).read()
+  '#\n'
+
+``str(directory)`` returns tree representation of the directory tree,
+like the one you might from the ``tree`` program on Linux environments.
+::
+
+  >>> print "garbage" + str(directory) 
+  ... # the "garbage..." line actually contains the path to the handler's root.
+  garbage...
+  |-- __init__.py
+  `-- profile
+      `-- types
+  <BLANKLINE>
+
+Clean up test Environment.
+::
+
+  >>> import shutil
+  >>> shutil.rmtree(tempdir)
