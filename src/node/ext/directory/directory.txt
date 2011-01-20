@@ -4,12 +4,12 @@ Directory
 
 The Directory maps directly a filesystem directory. The implementation fits 
 the contract for ``agx.core.interfaces.ISource``,
-``agx.core.interfaces.ITarget`` and ``agx.io.directory.interfaces.IDirectory``.
+``agx.core.interfaces.ITarget`` and ``node.ext.directory.interfaces.IDirectory``.
 
 Create a directory.
 ::
 
-  >>> from agx.io.directory import Directory
+  >>> from node.ext.directory import Directory
 
 Create a temporary test directory to test the handler.
 ::
@@ -22,7 +22,7 @@ We need a mock IFile implementation.
 
   >>> import os
   >>> from zope.interface import implements
-  >>> from agx.io.directory.interfaces import IFile
+  >>> from node.ext.directory.interfaces import IFile
   >>> from zodict.node import Node
   >>> class File(Node):
   ...     implements(IFile)
@@ -51,14 +51,14 @@ files with the postfix ``.bak``.
 
   >>> directory['profile'] = None
   >>> directory['profile']
-  <agx.io.directory.directory.Directory object at ...>
+  <node.ext.directory.directory.Directory object at ...>
   
   >>> directory['profile'].path
   ['...root', 'profile']
 
   >>> directory['profile']['types'] = None
   >>> directory['profile']['types'] 
-  <agx.io.directory.directory.Directory object at ...>
+  <node.ext.directory.directory.Directory object at ...>
 
   >>> directory['__init__.py'] = File('some_template')
   >>> directory['__init__.py']

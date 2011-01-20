@@ -1,22 +1,26 @@
+from plumber import Plumber
 import os
 import shutil
-from zodict.node import Node
+from node.base import BaseNode
+from node.plumbing.reference import Reference
+from node.interfaces import IRoot
 from zope.interface import implements
 from zope.interface import alsoProvides
 from zope.component.event import objectEventNotify
-from zodict.interfaces import IRoot
-from agx.io.directory.interfaces import IDirectory
-from agx.io.directory.interfaces import IFile
-from agx.io.directory.events import FileAddedEvent
+from node.ext.directory.interfaces import IDirectory
+from node.ext.directory.interfaces import IFile
+from node.ext.directory.events import FileAddedEvent
 
-class Directory(Node):
+class Directory(BaseNode):
+    __metaclass__ = Plumber
+    __pipeline__ = Reference
     """Object mapping a file system directory.
     """
 
     implements(IDirectory)
 
     def __init__(self, name=None, backup=False):
-        Node.__init__(self, name)
+        super(Directory, self).__init__(name)
         self.backup = backup
 
     __repr__ = object.__repr__
@@ -66,17 +70,17 @@ class Directory(Node):
             raise ValueError(msg)
         if value is None:
             value = Directory(backup=self.backup)
-            Node.__setitem__(self, name, value)
+            super(Directory, self).__setitem__(name, value)
         elif IFile.providedBy(value) \
           or IDirectory.providedBy(value):
-            Node.__setitem__(self, name, value)
+            super(Directory, self).__setitem__(name, value)
         objectEventNotify(FileAddedEvent(value))
 
     def __getitem__(self, name):
         if not name in self.keys():
             value = Directory(backup=self.backup)
-            Node.__setitem__(self, name, value)
-        return Node.__getitem__(self, name)
+            super(Directory, self).__setitem__(name, value)
+        return super(Directory, self).__getitem__(name)
 
     def _get_child_files(self):
         """Get the directly contained template handlers.
