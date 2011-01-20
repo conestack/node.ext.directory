@@ -1,20 +1,17 @@
-# Copyright BlueDynamics Alliance - http://bluedynamics.com
-# GNU General Public License Version 2
-
 from zope.interface import Attribute
 from zope.lifecycleevent import IObjectAddedEvent
-from zodict.interfaces import ILeaf
-from zodict.interfaces import ICallableNode
+from node.interfaces import ILeaf
+from node.interfaces import ICallable
 
 class IFileAddedEvent(IObjectAddedEvent):
     """An File has been added to directory.
     """
 
-class IFile(ICallableNode, ILeaf):
+class IFile(ICallable, ILeaf):
     """Marker interface for a file.
     """
 
-class IDirectory(ICallableNode):
+class IDirectory(ICallable):
     """Directory target interface.
     """
 

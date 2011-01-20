@@ -9,7 +9,7 @@ the contract for ``agx.core.interfaces.ISource``,
 Create a directory.
 ::
 
-  >>> from node.ext.directory import Directory
+  >>> from node.ext.directory.directory import Directory
 
 Create a temporary test directory to test the handler.
 ::
@@ -20,11 +20,15 @@ Create a temporary test directory to test the handler.
 We need a mock IFile implementation.
 ::
 
+  >>> from plumber import Plumber
   >>> import os
   >>> from zope.interface import implements
   >>> from node.ext.directory.interfaces import IFile
-  >>> from zodict.node import Node
-  >>> class File(Node):
+  >>> from node.base import BaseNode
+  >>> from node.plumbing.reference import Reference
+  >>> class File(BaseNode):
+  ...     __metaclass__ = Plumber
+  ...     __pipeline__ = Reference
   ...     implements(IFile)
   ...     __repr__ = object.__repr__
   ...     def __call__(self):
