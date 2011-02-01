@@ -20,15 +20,15 @@ Create a temporary test directory to test the handler.
 We need a mock IFile implementation.
 ::
 
-  >>> from plumber import Plumber
+  >>> from plumber import plumber
   >>> import os
   >>> from zope.interface import implements
   >>> from node.ext.directory.interfaces import IFile
   >>> from node.base import BaseNode
-  >>> from node.plumbing.reference import Reference
+  >>> from node.parts import Reference
   >>> class File(BaseNode):
-  ...     __metaclass__ = Plumber
-  ...     __pipeline__ = Reference
+  ...     __metaclass__ = plumber
+  ...     __plumbing__ = Reference
   ...     implements(IFile)
   ...     __repr__ = object.__repr__
   ...     def __call__(self):

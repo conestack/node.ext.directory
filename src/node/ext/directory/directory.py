@@ -1,21 +1,26 @@
-from plumber import Plumber
+from plumber import plumber
 import os
 import shutil
 from node.base import BaseNode
-from node.plumbing.reference import Reference
+from node.parts import Reference
 from node.interfaces import IRoot
-from zope.interface import implements
-from zope.interface import alsoProvides
+from zope.interface import (
+    implements,
+    alsoProvides,
+)
 from zope.component.event import objectEventNotify
-from node.ext.directory.interfaces import IDirectory
-from node.ext.directory.interfaces import IFile
+from node.ext.directory.interfaces import (
+    IDirectory,
+    IFile,
+)
 from node.ext.directory.events import FileAddedEvent
 
+
 class Directory(BaseNode):
-    __metaclass__ = Plumber
-    __pipeline__ = Reference
     """Object mapping a file system directory.
     """
+    __metaclass__ = plumber
+    __plumbing__ = Reference
 
     implements(IDirectory)
 

@@ -1,15 +1,20 @@
 from zope.interface import Attribute
 from zope.lifecycleevent import IObjectAddedEvent
-from node.interfaces import ILeaf
-from node.interfaces import ICallable
+from node.interfaces import (
+    ILeaf,
+    ICallable,
+)
+
 
 class IFileAddedEvent(IObjectAddedEvent):
     """An File has been added to directory.
     """
 
+
 class IFile(ICallable, ILeaf):
     """Marker interface for a file.
     """
+
 
 class IDirectory(ICallable):
     """Directory target interface.
