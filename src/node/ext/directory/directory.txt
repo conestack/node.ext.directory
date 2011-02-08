@@ -6,19 +6,16 @@ The Directory maps directly a filesystem directory. The implementation fits
 the contract for ``agx.core.interfaces.ISource``,
 ``agx.core.interfaces.ITarget`` and ``node.ext.directory.interfaces.IDirectory``.
 
-Create a directory.
-::
+Create a directory.::
 
   >>> from node.ext.directory.directory import Directory
 
-Create a temporary test directory to test the handler.
-::
+Create a temporary test directory to test the handler.::
 
   >>> import tempfile
   >>> tempdir = tempfile.mkdtemp()
 
-We need a mock IFile implementation.
-::
+We need a mock IFile implementation.::
 
   >>> from plumber import plumber
   >>> import os
@@ -44,8 +41,7 @@ must always be called at the root for writing. Otherwise a RuntimeError is
 raised.
 
 ``backup=True`` on init causes the directory to create backup files of existing
-files with the postfix ``.bak``.
-::
+files with the postfix ``.bak``.::
 
   >>> rootdir = os.path.join(tempdir, "root")
   >>> rootdir
@@ -53,14 +49,14 @@ files with the postfix ``.bak``.
   
   >>> directory = Directory(rootdir, backup=True)
 
-  >>> directory['profile'] = None
+  >>> directory['profile'] = Directory()
   >>> directory['profile']
   <node.ext.directory.directory.Directory object at ...>
   
   >>> directory['profile'].path
   ['...root', 'profile']
 
-  >>> directory['profile']['types'] = None
+  >>> directory['profile']['types'] = Directory()
   >>> directory['profile']['types'] 
   <node.ext.directory.directory.Directory object at ...>
 
@@ -68,13 +64,22 @@ files with the postfix ``.bak``.
   >>> directory['__init__.py']
   <File object at ...>
 
-Tell the handler to dump itself.
-::
+Check wether node index is set correctly::
+  
+  >>> directory.printtree()
+  <class 'node.ext.directory.directory.Directory'>: /tmp/.../root
+      <class 'node.ext.directory.directory.Directory'>: profile
+        <class 'node.ext.directory.directory.Directory'>: types
+      <class 'File'>: __init__.py
+  
+  >>> len(directory._index)
+  4
+
+Tell the handler to dump itself.::
 
   >>> directory()
 
-Check if the directory contents were created.
-::
+Check if the directory contents were created.::
 
   >>> os.path.exists(os.path.join(rootdir, 'profile', 'types'))
   True
@@ -83,16 +88,14 @@ Check if the directory contents were created.
   True
 
 Call the directory again now, it creates a backup of the existing
-templates, in our case just one.
-::
+templates, in our case just one.::
 
   >>> directory()
   >>> file(os.path.join(rootdir, '__init__.py.bak')).read()
   '#\n'
 
 ``str(directory)`` returns tree representation of the directory tree,
-like the one you might from the ``tree`` program on Linux environments.
-::
+like the one you might from the ``tree`` program on Linux environments.::
 
   >>> print "garbage" + str(directory) 
   ... # the "garbage..." line actually contains the path to the handler's root.
@@ -102,8 +105,7 @@ like the one you might from the ``tree`` program on Linux environments.
       `-- types
   <BLANKLINE>
 
-Clean up test Environment.
-::
+Clean up test Environment.::
 
   >>> import shutil
   >>> shutil.rmtree(tempdir)

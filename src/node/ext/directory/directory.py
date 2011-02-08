@@ -1,8 +1,9 @@
 from plumber import plumber
 import os
 import shutil
-from node.base import BaseNode
-from node.parts import Reference
+#from node.base import BaseNode
+from node.base import OrderedNode
+from node.parts import Reference, Order
 from node.interfaces import IRoot
 from zope.interface import (
     implements,
@@ -16,11 +17,12 @@ from node.ext.directory.interfaces import (
 from node.ext.directory.events import FileAddedEvent
 
 
-class Directory(BaseNode):
+#class Directory(BaseNode):
+class Directory(OrderedNode):
     """Object mapping a file system directory.
     """
     __metaclass__ = plumber
-    __plumbing__ = Reference
+    __plumbing__ = Reference, Order
 
     implements(IDirectory)
 
@@ -73,10 +75,7 @@ class Directory(BaseNode):
         if name in self.keys():
             msg = u"Node already exists: %s" % ('/'.join(self.path + [name]))
             raise ValueError(msg)
-        if value is None:
-            value = Directory(backup=self.backup)
-            super(Directory, self).__setitem__(name, value)
-        elif IFile.providedBy(value) \
+        if IFile.providedBy(value) \
           or IDirectory.providedBy(value):
             super(Directory, self).__setitem__(name, value)
         objectEventNotify(FileAddedEvent(value))
@@ -84,7 +83,7 @@ class Directory(BaseNode):
     def __getitem__(self, name):
         if not name in self.keys():
             value = Directory(backup=self.backup)
-            super(Directory, self).__setitem__(name, value)
+            self[name] = value
         return super(Directory, self).__getitem__(name)
 
     def _get_child_files(self):
