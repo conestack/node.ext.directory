@@ -27,7 +27,9 @@ class IDirectory(ICallable):
         """Set item inside this directory.
 
         @param name: name of the item (either a file name or a directory name)
+        
         @param value: either ``IFile`` implementation or None. If
                       value is None, create ``IDirectory`` child.
+        
         @raise ValueError: If child for name already set.
         """
