@@ -67,7 +67,7 @@ files with the postfix ``.bak``.::
 Check wether node index is set correctly::
   
   >>> directory.printtree()
-  <class 'node.ext.directory.directory.Directory'>: /tmp/.../root
+  <class 'node.ext.directory.directory.Directory'>: .../root
       <class 'node.ext.directory.directory.Directory'>: profile
         <class 'node.ext.directory.directory.Directory'>: types
       <class 'File'>: __init__.py
