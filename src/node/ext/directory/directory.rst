@@ -1,115 +1,217 @@
-Directory
-=========
-
 The Directory maps directly a filesystem directory. The implementation fits 
 the contract for ``agx.core.interfaces.ISource``,
-``agx.core.interfaces.ITarget`` and ``node.ext.directory.interfaces.IDirectory``.
+``agx.core.interfaces.ITarget`` and 
+``node.ext.directory.interfaces.IDirectory``.
 
-Create a directory::
+Create test env::
 
-    >>> from node.ext.directory.directory import Directory
-
-Create a temporary test directory to test the handler::
-
+    >>> import os
     >>> import tempfile
     >>> tempdir = tempfile.mkdtemp()
 
-We need a mock IFile implementation::
+Default file implementation::
 
-    >>> from plumber import plumber
-    >>> import os
-    >>> from zope.interface import implements
-    >>> from node.ext.directory.interfaces import IFile
-    >>> from node.base import BaseNode
-    >>> from node.parts import Reference
-    >>> class File(BaseNode):
-    ...     __metaclass__ = plumber
-    ...     __plumbing__ = Reference
-    ...     implements(IFile)
-    ...     __repr__ = object.__repr__
-    ...     def __call__(self):
-    ...         f = file(self.abspath, "w")
-    ...         f.write("#\n")
-    ...         f.close()
-    ...     @property
-    ...     def abspath(self):
-    ...         return os.path.sep.join(self.path)
+    >>> from node.ext.directory import File
+    >>> filepath = os.path.join(tempdir, "file.txt")
+    >>> file = File(filepath)
+    >>> file.data
+    ''
+    
+    >>> os.path.exists(filepath)
+    False
+    
+    >>> file()
+    
+    >>> os.path.exists(filepath)
+    True
+    
+    >>> with open(filepath) as f:
+    ...     out = f.read()
+    >>> out
+    ''
+    
+    >>> file.data = "abc\ndef"
+    >>> file()
+    >>> with open(filepath) as f:
+    ...     out = f.readlines()
+    >>> out
+    ['abc\n', 'def']
+    
+    >>> file = File(filepath)
+    >>> file.data
+    'abc\ndef'
+    
+    >>> file.lines
+    ['abc', 'def']
+    
+    >>> file.lines = ['a', 'b', 'c']
+    >>> file()
+    >>> with open(filepath) as f:
+    ...     out = f.read()
+    >>> out
+    'a\nb\nc'
 
-Create the directory passing the path of the temporary directory. The directory
-must always be called at the root for writing. Otherwise a RuntimeError is 
-raised.
+Create directory and read already created file by factory::
 
-``backup=True`` on init causes the directory to create backup files of existing
-files with the postfix ``.bak``::
+    >>> from node.ext.directory.directory import Directory
+    >>> directory = Directory(tempdir)
+    >>> directory.keys()
+    ['file.txt']
+    
+    >>> file = directory['file.txt']
+    Traceback (most recent call last):
+      ...
+    ValueError: Found but no factory registered: file.txt
+    
+    >>> import node.ext.directory
+    >>> node.ext.directory.file_factories['.txt'] = File
+    >>> node.ext.directory.file_factories['.py'] = File
+    
+    >>> directory = Directory(tempdir)
+    >>> file = directory['file.txt']
+    >>> file
+    <File object 'file.txt' at ...>
+
+Create a new directory::
 
     >>> rootdir = os.path.join(tempdir, "root")
-    >>> rootdir
-    '...root'
-  
-    >>> directory = Directory(rootdir, backup=True)
+    >>> directory = Directory(rootdir)
 
-    >>> directory['profile'] = Directory()
-    >>> directory['profile']
-    <node.ext.directory.directory.Directory object at ...>
+    >>> os.path.exists(rootdir)
+    False
+
+    >>> directory()
+    >>> os.path.exists(rootdir)
+    True
+
+Add subdirectories::
+
+    >>> directory['subdir1'] = Directory()
+    >>> directory['subdir2'] = Directory()
+    >>> directory.printtree()
+    <class 'node.ext.directory.directory.Directory'>: /tmp/.../root
+      <class 'node.ext.directory.directory.Directory'>: subdir2
+      <class 'node.ext.directory.directory.Directory'>: subdir1
+    
+    >>> directory.keys()
+    ['subdir2', 'subdir1']
+    
+    >>> os.listdir(os.path.join(*directory.path))
+    []
+    
+    >>> directory()
+    >>> os.listdir(os.path.join(*directory.path))
+    ['subdir1', 'subdir2']
+
+``backup=True`` on init causes the directory to create backup files of existing
+files with postfix ``.bak``::
+
+    >>> directory = Directory(tempdir, backup=True)
+    >>> directory.keys()
+    ['file.txt', 'root']
+    
+    >>> directory['file.txt']
+    <File object 'file.txt' at ...>
+    
+    >>> directory['root']
+    <Directory object 'root' at ...>
+    
+    >>> directory['root'].keys()
+    ['subdir2', 'subdir1']
+    
+    >>> directory['root'].backup
+    True
+
+    >>> directory['root']['profile'] = Directory()
+    >>> directory['root']['profile']
+    <Directory object 'profile' at ...>
+    
+    >>> directory['root'].keys()
+    ['profile', 'subdir2', 'subdir1']
   
-    >>> directory['profile'].path
+    >>> directory['root']['profile'].path
     ['...root', 'profile']
 
-    >>> directory['profile']['types'] = Directory()
-    >>> directory['profile']['types'] 
-    <node.ext.directory.directory.Directory object at ...>
+    >>> directory['root']['profile']['types'] = Directory()
+    >>> directory['root']['profile']['types'] 
+    <Directory object 'types' at ...>
 
-    >>> directory['__init__.py'] = File('some_template')
-    >>> directory['__init__.py']
-    <File object at ...>
+    >>> directory['root']['__init__.py'] = File()
+    >>> directory['root']['__init__.py']
+    <File object '__init__.py' at ...>
 
 Check wether node index is set correctly::
 
     >>> directory.printtree()
-    <class 'node.ext.directory.directory.Directory'>: .../root
+    <class 'node.ext.directory.directory.Directory'>: /...
+      <class 'node.ext.directory.directory.File'>: file.txt
+      <class 'node.ext.directory.directory.Directory'>: root
         <class 'node.ext.directory.directory.Directory'>: profile
           <class 'node.ext.directory.directory.Directory'>: types
-        <class 'File'>: __init__.py
+        <class 'node.ext.directory.directory.Directory'>: subdir2
+        <class 'node.ext.directory.directory.File'>: __init__.py
+        <class 'node.ext.directory.directory.Directory'>: subdir1
   
     >>> len(directory._index)
-    4
+    8
 
-Tell the handler to dump itself::
-
-    >>> directory()
-
-Check if the directory contents were created::
-
-    >>> os.path.exists(os.path.join(rootdir, 'profile', 'types'))
-    True
-  
-    >>> os.path.exists(os.path.join(rootdir, '__init__.py'))
-    True
-
-Call the directory again now, it creates a backup of the existing
-templates, in our case just one::
+dump::
 
     >>> directory()
-    >>> file(os.path.join(rootdir, '__init__.py.bak')).read()
-    '#\n'
-
-``str(directory)`` returns tree representation of the directory tree,
-like the one you might from the ``tree`` program on Linux environments::
-
-    >>> print "garbage" + str(directory) 
-    ... # the "garbage..." line actually contains the path to the handler's root.
-    garbage...
-    |-- __init__.py
-    `-- profile
-        `-- types
-    <BLANKLINE>
-
-Create new directory instance and check ``__iter__``::
-
-    >>> os.listdir(rootdir)
-    ['profile', '__init__.py.bak', '__init__.py']
+    >>> directory = Directory(tempdir)
+    >>> directory.keys()
+    ['file.txt', 'root']
     
-    >>> 
+    >>> directory.printtree()
+    <class 'node.ext.directory.directory.Directory'>: /...
+      <class 'node.ext.directory.directory.File'>: file.txt
+      <class 'node.ext.directory.directory.Directory'>: root
+        <class 'node.ext.directory.directory.Directory'>: profile
+          <class 'node.ext.directory.directory.Directory'>: types
+        <class 'node.ext.directory.directory.Directory'>: subdir2
+        <class 'node.ext.directory.directory.File'>: __init__.py
+        <class 'node.ext.directory.directory.Directory'>: subdir1
+
+    >>> os.listdir(os.path.join(*directory.path))
+    ['file.txt', 'file.txt.bak', 'root']
+    
+    >>> os.listdir(os.path.join(*directory['root'].path))
+    ['profile', '__init__.py.bak', '__init__.py', 'subdir1', 'subdir2']
+
+Delete file::
+
+    >>> del directory['file.txt']
+    >>> len(directory._index)
+    7
+    
+    >>> directory.keys()
+    ['root']
+    
+    >>> directory._deleted
+    ['file.txt']
+    
+    >>> os.listdir(tempdir)
+    ['file.txt', 'file.txt.bak', 'root']
+    
+    >>> directory()
+    >>> os.listdir(tempdir)
+    ['root']
+
+Delete Directory::
+
+    >>> del directory['root']['profile']
+    >>> len(directory._index)
+    5
+    
+    >>> directory['root'].keys()
+    ['subdir2', '__init__.py', 'subdir1']
+    
+    >>> os.listdir(rootdir)
+    ['profile', '__init__.py.bak', '__init__.py', 'subdir1', 'subdir2']
+    
+    >>> directory()
+    >>> os.listdir(rootdir)
+    ['__init__.py.bak', '__init__.py', 'subdir1', 'subdir2']
 
 Clean up test Environment::
 

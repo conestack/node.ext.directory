@@ -1,1 +1,5 @@
-from directory import Directory
+from directory import (
+    File,
+    Directory,
+    file_factories,
+)

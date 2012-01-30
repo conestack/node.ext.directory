@@ -1,9 +1,16 @@
-from plumber import plumber
 import os
 import shutil
-#from node.base import BaseNode
-from node.base import OrderedNode
-from node.parts import Reference, Order
+from plumber import plumber
+from node.base import BaseNode
+from node.parts import (
+    NodeChildValidate,
+    Adopt,
+    AsAttrAccess,
+    DefaultInit,
+    Reference,
+    Nodify,
+    DictStorage,
+)
 from node.interfaces import IRoot
 from zope.interface import (
     implements,
@@ -17,99 +24,140 @@ from node.ext.directory.interfaces import (
 from node.ext.directory.events import FileAddedEvent
 
 
-class Directory(OrderedNode):
+class File(object):
+    __metaclass__ = plumber
+    __plumbing__ = (
+        Adopt,
+        DefaultInit,
+        Reference,
+        Nodify,
+        DictStorage,
+    )
+    implements(IFile)
+    
+    def _get_data(self):
+        if not hasattr(self, '_data'):
+            self._data = ''
+            if os.path.exists(os.path.sep.join(self.path)):
+                with open(os.path.sep.join(self.path), 'r') as file:
+                    self._data = file.read()
+        return self._data
+    
+    def _set_data(self, data):
+        self._data = data
+    
+    data = property(_get_data, _set_data)
+    
+    def _get_lines(self):
+        return self.data.split('\n')
+    
+    def _set_lines(self, lines):
+        self.data = '\n'.join(lines)
+    
+    lines = property(_get_lines, _set_lines)
+    
+    def __call__(self):
+        with open(os.path.sep.join(self.path), 'w') as file:
+            file.write(self.data)
+
+
+file_factories = dict()
+
+
+class Directory(object):
     """Object mapping a file system directory.
     """
     __metaclass__ = plumber
-    __plumbing__ = Reference, Order
-
+    __plumbing__ = (
+        NodeChildValidate,
+        Adopt,
+        DefaultInit,
+        Reference,
+        Nodify,
+        DictStorage,
+    )
     implements(IDirectory)
-
-    def __init__(self, name=None, backup=False):
-        super(Directory, self).__init__(name)
+    backup = True
+    
+    def __init__(self, name=None, parent=None,
+                 backup=True, factories=file_factories):
+        self.__name__ = name
+        self.__parent__ = parent
         self.backup = backup
-
-    __repr__ = object.__repr__
+        self.file_factories = file_factories
+        self._deleted = list()
 
     def __call__(self):
-        if self.__parent__:
-            if hasattr(self, '_from_root'):
-                if not self._from_root:
-                        raise RuntimeError(u"Directory called but not on "
-                                            "virtual root.")
-        if IRoot.providedBy(self):
-            setattr(self, '_from_root', True)
         if IDirectory.providedBy(self):
-            self._mkdir()
+            try:
+                os.mkdir(os.path.join(*self.path))
+            except OSError, e:
+                # Ignore ``already exists``.
+                if e.errno != 17:
+                    raise
+        for name in self._deleted:
+            abspath = os.path.join(*self.path + [name])
+            if os.path.exists(abspath):
+                if os.path.isdir(abspath):
+                    shutil.rmtree(abspath)
+                else:
+                    os.remove(abspath)
+                    if os.path.exists(abspath + '.bak'):
+                        os.remove(abspath + '.bak')
+                continue
         for name, target in self.items():
             if IDirectory.providedBy(target):
                 target()
             elif IFile.providedBy(target):
-                if self.backup and os.path.exists(target.abspath):
-                    shutil.copyfile(target.abspath, target.abspath + '.bak')
                 target()
-        if IRoot.providedBy(self):
-            setattr(self, '_from_root', False)
-
-    def markroot(self):
-        """Mark this directory as root.
-        """
-        if self.__parent__:
-            raise RuntimeError(u"Could not mark virtual child as root.")
-        alsoProvides(self, IRoot)
-
-    @property
-    def abspath(self):
-        return os.path.sep.join(self.path)
-
-    def _mkdir(self):
-        try:
-            os.mkdir(self.abspath)
-        except OSError, e:
-            # Ignore ``already exists``.
-            if e.errno != 17:
-                raise
+                abspath = os.path.join(*target.path)
+                if self.backup and os.path.exists(abspath):
+                    shutil.copyfile(abspath, abspath + '.bak')
 
     def __setitem__(self, name, value):
-        if name in self.keys():
-            msg = u"Node already exists: %s" % ('/'.join(self.path + [name]))
-            raise ValueError(msg)
-        if IFile.providedBy(value) \
-          or IDirectory.providedBy(value):
-            super(Directory, self).__setitem__(name, value)
-        objectEventNotify(FileAddedEvent(value))
+        if IFile.providedBy(value) or IDirectory.providedBy(value):
+            if IDirectory.providedBy(value):
+                value.backup = self.backup
+            self.storage[name] = value
+            objectEventNotify(FileAddedEvent(value))
+            return
+        raise ValueError(u"Unknown child node.")
 
     def __getitem__(self, name):
-        return super(Directory, self).__getitem__(name)
-
-    def _get_child_files(self):
-        """Get the directly contained template handlers.
-
-        Returns (name, handler) tuples.
-        """
-        return [(name, handler) for (name, handler) in self.items()
-                if IFile.providedBy(handler)]
-
-    def _get_child_dirs(self):
-        """Get the directly contained directory handlers.
-
-        Returns (name, handler) tuples.
-        """
-        return [(name, handler) for (name, handler) in self.items()
-                if IDirectory.providedBy(handler)]
-
-    def _print_tree(self, level=0):
-        """Return a string representation of the contained directory tree.
-        """
-        ret = ""
-        if level == 0:
-            ret += '/'.join(self.path) + "\n"
-        for name, handler in self._get_child_files():
-            ret += level * "    " + "|-- " + name + "\n"
-        for name, handler in self._get_child_dirs():
-            ret += level * "    " + "`-- " + name + "\n"
-            ret += handler._print_tree(level+1)
-        return ret
-
-    def __str__(self):
-        return self._print_tree()
+        if not name in self.storage:
+            filepath = os.path.join(*self.path + [name])
+            if os.path.exists(filepath):
+                if os.path.isdir(filepath):
+                    self[name] = Directory()
+                else:
+                    factory = self._factory_for_ending(name)
+                    if factory:
+                        self[name] = factory()
+                    else:
+                        raise ValueError(
+                            u"Found but no factory registered: %s" % name)
+        return self.storage[name]
+    
+    def __delitem__(self, name):
+        if os.path.exists(os.path.join(*self.path + [name])):
+            self._deleted.append(name)
+        del self.storage[name]
+    
+    def __iter__(self):
+        try:
+            existing = set(os.listdir(os.path.join(*self.path)))
+        except OSError:
+            existing = set()
+        for key in self.storage:
+            existing.add(key)
+        for key in existing:
+            if self.backup and key.endswith('.bak'):
+                continue
+            if key in self._deleted:
+                continue
+            yield key
+    
+    def _factory_for_ending(self, name):
+        for key in self.file_factories.keys():
+            if name.endswith(key):
+                return self.file_factories[key]
