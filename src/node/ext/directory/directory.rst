@@ -1,0 +1,117 @@
+Directory
+=========
+
+The Directory maps directly a filesystem directory. The implementation fits 
+the contract for ``agx.core.interfaces.ISource``,
+``agx.core.interfaces.ITarget`` and ``node.ext.directory.interfaces.IDirectory``.
+
+Create a directory::
+
+    >>> from node.ext.directory.directory import Directory
+
+Create a temporary test directory to test the handler::
+
+    >>> import tempfile
+    >>> tempdir = tempfile.mkdtemp()
+
+We need a mock IFile implementation::
+
+    >>> from plumber import plumber
+    >>> import os
+    >>> from zope.interface import implements
+    >>> from node.ext.directory.interfaces import IFile
+    >>> from node.base import BaseNode
+    >>> from node.parts import Reference
+    >>> class File(BaseNode):
+    ...     __metaclass__ = plumber
+    ...     __plumbing__ = Reference
+    ...     implements(IFile)
+    ...     __repr__ = object.__repr__
+    ...     def __call__(self):
+    ...         f = file(self.abspath, "w")
+    ...         f.write("#\n")
+    ...         f.close()
+    ...     @property
+    ...     def abspath(self):
+    ...         return os.path.sep.join(self.path)
+
+Create the directory passing the path of the temporary directory. The directory
+must always be called at the root for writing. Otherwise a RuntimeError is 
+raised.
+
+``backup=True`` on init causes the directory to create backup files of existing
+files with the postfix ``.bak``::
+
+    >>> rootdir = os.path.join(tempdir, "root")
+    >>> rootdir
+    '...root'
+  
+    >>> directory = Directory(rootdir, backup=True)
+
+    >>> directory['profile'] = Directory()
+    >>> directory['profile']
+    <node.ext.directory.directory.Directory object at ...>
+  
+    >>> directory['profile'].path
+    ['...root', 'profile']
+
+    >>> directory['profile']['types'] = Directory()
+    >>> directory['profile']['types'] 
+    <node.ext.directory.directory.Directory object at ...>
+
+    >>> directory['__init__.py'] = File('some_template')
+    >>> directory['__init__.py']
+    <File object at ...>
+
+Check wether node index is set correctly::
+
+    >>> directory.printtree()
+    <class 'node.ext.directory.directory.Directory'>: .../root
+        <class 'node.ext.directory.directory.Directory'>: profile
+          <class 'node.ext.directory.directory.Directory'>: types
+        <class 'File'>: __init__.py
+  
+    >>> len(directory._index)
+    4
+
+Tell the handler to dump itself::
+
+    >>> directory()
+
+Check if the directory contents were created::
+
+    >>> os.path.exists(os.path.join(rootdir, 'profile', 'types'))
+    True
+  
+    >>> os.path.exists(os.path.join(rootdir, '__init__.py'))
+    True
+
+Call the directory again now, it creates a backup of the existing
+templates, in our case just one::
+
+    >>> directory()
+    >>> file(os.path.join(rootdir, '__init__.py.bak')).read()
+    '#\n'
+
+``str(directory)`` returns tree representation of the directory tree,
+like the one you might from the ``tree`` program on Linux environments::
+
+    >>> print "garbage" + str(directory) 
+    ... # the "garbage..." line actually contains the path to the handler's root.
+    garbage...
+    |-- __init__.py
+    `-- profile
+        `-- types
+    <BLANKLINE>
+
+Create new directory instance and check ``__iter__``::
+
+    >>> os.listdir(rootdir)
+    ['profile', '__init__.py.bak', '__init__.py']
+    
+    >>> 
+
+Clean up test Environment::
+
+    >>> import shutil
+    >>> shutil.rmtree(tempdir)

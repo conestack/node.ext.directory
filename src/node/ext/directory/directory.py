@@ -17,7 +17,6 @@ from node.ext.directory.interfaces import (
 from node.ext.directory.events import FileAddedEvent
 
 
-#class Directory(BaseNode):
 class Directory(OrderedNode):
     """Object mapping a file system directory.
     """
@@ -81,9 +80,6 @@ class Directory(OrderedNode):
         objectEventNotify(FileAddedEvent(value))
 
     def __getitem__(self, name):
-        if not name in self.keys():
-            value = Directory(backup=self.backup)
-            self[name] = value
         return super(Directory, self).__getitem__(name)
 
     def _get_child_files(self):
