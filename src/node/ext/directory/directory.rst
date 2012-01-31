@@ -55,7 +55,7 @@ Factories. resolved by registration length, shortest last::
     
     >>> import node.ext.directory
     >>> node.ext.directory.file_factories
-    {}
+    {...}
     
     >>> from node.ext.directory import Directory
     >>> dir = Directory(tempdir)
@@ -192,6 +192,7 @@ dump::
 
     >>> directory()
     >>> directory = Directory(tempdir)
+    >>> directory.factories['.py'] = File
     >>> directory.keys()
     ['file.txt', 'root']
     
