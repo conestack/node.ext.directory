@@ -44,6 +44,7 @@ class File(object):
         return self._data
     
     def _set_data(self, data):
+        setattr(self, '_changed', True)
         self._data = data
     
     data = property(_get_data, _set_data)
@@ -57,10 +58,16 @@ class File(object):
     lines = property(_get_lines, _set_lines)
     
     def __call__(self):
-        with open(os.path.sep.join(self.path), 'w') as file:
+        exists = os.path.exists(os.path.join(*self.path))
+        if not hasattr(self, '_changed') and exists:
+            # do not overwrite file if not changed. if not exists but set
+            # and empty, write empty file. 
+            return
+        with open(os.path.join(*self.path), 'w') as file:
             file.write(self.data)
 
 
+# global file factories
 file_factories = dict()
 
 
@@ -79,12 +86,12 @@ class Directory(object):
     implements(IDirectory)
     backup = True
     
-    def __init__(self, name=None, parent=None,
-                 backup=True, factories=file_factories):
+    def __init__(self, name=None, parent=None, backup=True, factories=dict()):
         self.__name__ = name
         self.__parent__ = parent
         self.backup = backup
-        self.file_factories = file_factories
+        # local file factories, overrule global factories
+        self.factories = factories
         self._deleted = list()
 
     def __call__(self):
@@ -134,8 +141,8 @@ class Directory(object):
                     if factory:
                         self[name] = factory()
                     else:
-                        raise ValueError(
-                            u"Found but no factory registered: %s" % name)
+                        # default
+                        self[name] = File()
         return self.storage[name]
     
     def __delitem__(self, name):
@@ -158,6 +165,21 @@ class Directory(object):
             yield key
     
     def _factory_for_ending(self, name):
-        for key in self.file_factories.keys():
-            if name.endswith(key):
-                return self.file_factories[key]
+        def match(keys, key):
+            keys = sorted(keys)
+            keys = sorted(keys,
+                          cmp=lambda x, y: len(x) > len(y) and 1 or -1,
+                          reverse=True)
+            for possible in keys:
+                if key.endswith(possible):
+                    return possible
+        factory_keys = [
+            match(self.factories.keys(), name),
+            match(file_factories.keys(), name),
+        ]
+        if factory_keys[0]:
+            if factory_keys[1] and len(factory_keys[1]) > len(factory_keys[0]):
+                return file_factories[factory_keys[1]]
+            return self.factories[factory_keys[0]]
+        if factory_keys[1]:
+            return file_factories[factory_keys[1]]

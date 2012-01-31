@@ -51,23 +51,56 @@ Default file implementation::
     >>> out
     'a\nb\nc'
 
-Create directory and read already created file by factory::
+Factories. resolved by registration length, shortest last::
+    
+    >>> import node.ext.directory
+    >>> node.ext.directory.file_factories
+    {}
+    
+    >>> from node.ext.directory import Directory
+    >>> dir = Directory(tempdir)
+    >>> dir.factories
+    {}
+    
+    >>> dir._factory_for_ending('foo')
+    
+    >>> def dummy_txt_factory(): pass
+    >>> node.ext.directory.file_factories['.txt'] = dummy_txt_factory
+    >>> def dummy_foo_factory(): pass
+    >>> node.ext.directory.file_factories['foo.txt'] = dummy_foo_factory
+    
+    >>> dir._factory_for_ending('bar.txt')
+    <function dummy_txt_factory at ...>
+    
+    >>> dir._factory_for_ending('foo.txt')
+    <function dummy_foo_factory at ...>
+    
+    >>> def dummy_local_txt_factory(): pass
+    >>> dir.factories['.txt'] = dummy_local_txt_factory
+    
+    >>> dir._factory_for_ending('bar.txt')
+    <function dummy_local_txt_factory at ...>
+    
+    >>> dir._factory_for_ending('foo.txt')
+    <function dummy_foo_factory at ...>
+    
+    >>> def dummy_local_foo_factory(): pass
+    >>> dir.factories['foo.txt'] = dummy_local_foo_factory
+    
+    >>> dir._factory_for_ending('foo.txt')
+    <function dummy_local_foo_factory at ...>
+    
+    >>> del node.ext.directory.file_factories['.txt']
+    >>> del node.ext.directory.file_factories['foo.txt']
+    >>> del dir.factories['.txt']
+    >>> del dir.factories['foo.txt']
 
-    >>> from node.ext.directory.directory import Directory
+Create directory and read already created file by default factory::
+
     >>> directory = Directory(tempdir)
     >>> directory.keys()
     ['file.txt']
     
-    >>> file = directory['file.txt']
-    Traceback (most recent call last):
-      ...
-    ValueError: Found but no factory registered: file.txt
-    
-    >>> import node.ext.directory
-    >>> node.ext.directory.file_factories['.txt'] = File
-    >>> node.ext.directory.file_factories['.py'] = File
-    
-    >>> directory = Directory(tempdir)
     >>> file = directory['file.txt']
     >>> file
     <File object 'file.txt' at ...>
