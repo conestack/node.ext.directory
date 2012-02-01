@@ -86,7 +86,7 @@ class Directory(object):
     implements(IDirectory)
     backup = True
     
-    def __init__(self, name=None, parent=None, backup=True, factories=dict()):
+    def __init__(self, name=None, parent=None, backup=False, factories=dict()):
         self.__name__ = name
         self.__parent__ = parent
         self.backup = backup
