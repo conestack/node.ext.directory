@@ -101,7 +101,7 @@ class Directory(object):
             except OSError, e:
                 # Ignore ``already exists``.
                 if e.errno != 17:
-                    raise
+                    raise e
         for name in self._deleted:
             abspath = os.path.join(*self.path + [name])
             if os.path.exists(abspath):
@@ -109,8 +109,9 @@ class Directory(object):
                     shutil.rmtree(abspath)
                 else:
                     os.remove(abspath)
-                    if os.path.exists(abspath + '.bak'):
-                        os.remove(abspath + '.bak')
+                    bakpath = os.path.join(*self.path + ['.%s.bak' % name])
+                    if os.path.exists(bakpath):
+                        os.remove(bakpath)
                 continue
         for name, target in self.items():
             if IDirectory.providedBy(target):
@@ -119,7 +120,9 @@ class Directory(object):
                 target()
                 abspath = os.path.join(*target.path)
                 if self.backup and os.path.exists(abspath):
-                    shutil.copyfile(abspath, abspath + '.bak')
+                    bakpath = os.path.join(
+                        *target.path[:-1] + ['.%s.bak' % target.name])
+                    shutil.copyfile(abspath, bakpath)
 
     def __setitem__(self, name, value):
         if IFile.providedBy(value) or IDirectory.providedBy(value):

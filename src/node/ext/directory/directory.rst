@@ -191,7 +191,7 @@ Check wether node index is set correctly::
 dump::
 
     >>> directory()
-    >>> directory = Directory(tempdir)
+    >>> directory = Directory(tempdir, backup=True)
     >>> directory.factories['.py'] = File
     >>> directory.keys()
     ['file.txt', 'root']
@@ -207,10 +207,10 @@ dump::
         <class 'node.ext.directory.directory.Directory'>: subdir1
 
     >>> os.listdir(os.path.join(*directory.path))
-    ['file.txt', 'file.txt.bak', 'root']
+    ['.file.txt.bak', 'file.txt', 'root']
     
     >>> os.listdir(os.path.join(*directory['root'].path))
-    ['profile', '__init__.py.bak', '__init__.py', 'subdir1', 'subdir2']
+    ['profile', '.__init__.py.bak', '__init__.py', 'subdir1', 'subdir2']
 
 Delete file::
 
@@ -225,7 +225,7 @@ Delete file::
     ['file.txt']
     
     >>> os.listdir(tempdir)
-    ['file.txt', 'file.txt.bak', 'root']
+    ['.file.txt.bak', 'file.txt', 'root']
     
     >>> directory()
     >>> os.listdir(tempdir)
@@ -241,11 +241,11 @@ Delete Directory::
     ['subdir2', '__init__.py', 'subdir1']
     
     >>> os.listdir(rootdir)
-    ['profile', '__init__.py.bak', '__init__.py', 'subdir1', 'subdir2']
+    ['profile', '.__init__.py.bak', '__init__.py', 'subdir1', 'subdir2']
     
     >>> directory()
     >>> os.listdir(rootdir)
-    ['__init__.py.bak', '__init__.py', 'subdir1', 'subdir2']
+    ['.__init__.py.bak', '__init__.py', 'subdir1', 'subdir2']
 
 Clean up test Environment::
 
