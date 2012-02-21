@@ -44,7 +44,7 @@ class File(object):
             self._mode = MODE_TEXT
         return self._mode
     
-    def _set_mode(self):
+    def _set_mode(self, mode):
         self._mode = mode
     
     mode = property(_get_mode, _set_mode)
