@@ -24,6 +24,10 @@ from node.ext.directory.interfaces import (
 from node.ext.directory.events import FileAddedEvent
 
 
+MODE_TEXT = 0
+MODE_BINARY = 1
+
+
 class File(object):
     __metaclass__ = plumber
     __plumbing__ = (
@@ -35,11 +39,25 @@ class File(object):
     )
     implements(IFile)
     
+    def _get_mode(self):
+        if not hasattr(self, '_mode'):
+            self._mode = MODE_TEXT
+        return self._mode
+    
+    def _set_mode(self):
+        self._mode = mode
+    
+    mode = property(_get_mode, _set_mode)
+    
     def _get_data(self):
         if not hasattr(self, '_data'):
-            self._data = ''
+            if self.mode == MODE_BINARY:
+                self._data = None
+            else:
+                self._data = ''
             if os.path.exists(os.path.sep.join(self.path)):
-                with open(os.path.sep.join(self.path), 'r') as file:
+                mode = self.mode == MODE_BINARY and 'rb' or 'r'
+                with open(os.path.sep.join(self.path), mode) as file:
                     self._data = file.read()
         return self._data
     
@@ -50,9 +68,13 @@ class File(object):
     data = property(_get_data, _set_data)
     
     def _get_lines(self):
+        if self.mode == MODE_BINARY:
+            raise RuntimeError(u"Cannot read lines from binary file.")
         return self.data.split('\n')
     
     def _set_lines(self, lines):
+        if self.mode == MODE_BINARY:
+            raise RuntimeError(u"Cannot write lines to binary file.")
         self.data = '\n'.join(lines)
     
     lines = property(_get_lines, _set_lines)
@@ -63,7 +85,8 @@ class File(object):
             # do not overwrite file if not changed. if not exists but set
             # and empty, write empty file. 
             return
-        with open(os.path.join(*self.path), 'w') as file:
+        mode = self.mode == MODE_BINARY and 'wb' or 'w'
+        with open(os.path.join(*self.path), mode) as file:
             file.write(self.data)
 
 
