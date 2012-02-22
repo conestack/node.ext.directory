@@ -115,6 +115,8 @@ class Directory(object):
         self.backup = backup
         # local file factories, overrule global factories
         self.factories = factories
+        # keys to ignore
+        self.ignores = list()
         self._deleted = list()
 
     def __call__(self):
@@ -187,6 +189,8 @@ class Directory(object):
             if self.backup and key.endswith('.bak'):
                 continue
             if key in self._deleted:
+                continue
+            if key in self.ignores:
                 continue
             yield key
     
