@@ -2,7 +2,7 @@ import os
 import shutil
 from plumber import plumber
 from node.base import BaseNode
-from node.parts import (
+from node.behaviors import (
     NodeChildValidate,
     Adopt,
     AsAttrAccess,
