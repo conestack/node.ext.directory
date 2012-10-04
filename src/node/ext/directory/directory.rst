@@ -206,11 +206,11 @@ dump::
         <class 'node.ext.directory.directory.File'>: __init__.py
         <class 'node.ext.directory.directory.Directory'>: subdir1
 
-    >>> os.listdir(os.path.join(*directory.path))
+    >>> sorted(os.listdir(os.path.join(*directory.path)))
     ['.file.txt.bak', 'file.txt', 'root']
     
-    >>> os.listdir(os.path.join(*directory['root'].path))
-    ['profile', '.__init__.py.bak', '__init__.py', 'subdir1', 'subdir2']
+    >>> sorted(os.listdir(os.path.join(*directory['root'].path)))
+    ['.__init__.py.bak', '__init__.py', 'profile', 'subdir1', 'subdir2']
 
 Delete file::
 
@@ -224,7 +224,7 @@ Delete file::
     >>> directory._deleted
     ['file.txt']
     
-    >>> os.listdir(tempdir)
+    >>> sorted(os.listdir(tempdir))
     ['.file.txt.bak', 'file.txt', 'root']
     
     >>> directory()
@@ -237,14 +237,14 @@ Delete Directory::
     >>> len(directory._index)
     5
     
-    >>> directory['root'].keys()
-    ['subdir2', '__init__.py', 'subdir1']
+    >>> sorted(directory['root'].keys())
+    ['__init__.py', 'subdir1', 'subdir2']
     
-    >>> os.listdir(rootdir)
-    ['profile', '.__init__.py.bak', '__init__.py', 'subdir1', 'subdir2']
+    >>> sorted(os.listdir(rootdir))
+    ['.__init__.py.bak', '__init__.py', 'profile', 'subdir1', 'subdir2']
     
     >>> directory()
-    >>> os.listdir(rootdir)
+    >>> sorted(os.listdir(rootdir))
     ['.__init__.py.bak', '__init__.py', 'subdir1', 'subdir2']
 
 Clean up test Environment::
