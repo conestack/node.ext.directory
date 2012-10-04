@@ -122,7 +122,7 @@ Add subdirectories::
     >>> directory['subdir1'] = Directory()
     >>> directory['subdir2'] = Directory()
     >>> directory.printtree()
-    <class 'node.ext.directory.directory.Directory'>: /tmp/.../root
+    <class 'node.ext.directory.directory.Directory'>: /.../root
       <class 'node.ext.directory.directory.Directory'>: subdir2
       <class 'node.ext.directory.directory.Directory'>: subdir1
     
