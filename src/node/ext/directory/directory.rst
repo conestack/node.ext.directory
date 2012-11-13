@@ -133,7 +133,7 @@ Add subdirectories::
     []
     
     >>> directory()
-    >>> os.listdir(os.path.join(*directory.path))
+    >>> sorted(os.listdir(os.path.join(*directory.path)))
     ['subdir1', 'subdir2']
 
 ``backup=True`` on init causes the directory to create backup files of existing
