@@ -1,11 +1,13 @@
 import os
 import shutil
-from plumber import plumber
+from plumber import (
+    plumber,
+    default,
+    finalize,
+)
 from node.base import BaseNode
 from node.behaviors import (
-    NodeChildValidate,
     Adopt,
-    AsAttrAccess,
     DefaultInit,
     Reference,
     Nodify,
@@ -13,7 +15,7 @@ from node.behaviors import (
 )
 from node.interfaces import IRoot
 from zope.interface import (
-    implements,
+    implementer,
     alsoProvides,
 )
 from zope.component.event import objectEventNotify
@@ -28,6 +30,7 @@ MODE_TEXT = 0
 MODE_BINARY = 1
 
 
+@implementer(IFile)
 class File(object):
     __metaclass__ = plumber
     __plumbing__ = (
@@ -37,18 +40,17 @@ class File(object):
         Nodify,
         DictStorage,
     )
-    implements(IFile)
-    
+
     def _get_mode(self):
         if not hasattr(self, '_mode'):
             self._mode = MODE_TEXT
         return self._mode
-    
+
     def _set_mode(self, mode):
         self._mode = mode
-    
+
     mode = property(_get_mode, _set_mode)
-    
+
     def _get_data(self):
         if not hasattr(self, '_data'):
             if self.mode == MODE_BINARY:
@@ -60,23 +62,23 @@ class File(object):
                 with open(os.path.sep.join(self.fs_path), mode) as file:
                     self._data = file.read()
         return self._data
-    
+
     def _set_data(self, data):
         setattr(self, '_changed', True)
         self._data = data
-    
+
     data = property(_get_data, _set_data)
-    
+
     def _get_lines(self):
         if self.mode == MODE_BINARY:
             raise RuntimeError(u"Cannot read lines from binary file.")
         return self.data.split('\n')
-    
+
     def _set_lines(self, lines):
         if self.mode == MODE_BINARY:
             raise RuntimeError(u"Cannot write lines to binary file.")
         self.data = '\n'.join(lines)
-    
+
     lines = property(_get_lines, _set_lines)
 
     @property
@@ -98,21 +100,21 @@ class File(object):
 file_factories = dict()
 
 
-class Directory(object):
-    """Object mapping a file system directory.
-    """
-    __metaclass__ = plumber
-    __plumbing__ = (
-        NodeChildValidate,
-        Adopt,
-        DefaultInit,
-        Reference,
-        Nodify,
-        DictStorage,
-    )
-    implements(IDirectory)
-    backup = True
+@implementer(IDirectory)
+class DirectoryStorage(DictStorage):
+    backup = default(True)
 
+    @default
+    @property
+    def child_directory_factory(self):
+        return Directory
+
+    @default
+    @property
+    def fs_path(self):
+        return self.path
+
+    @finalize
     def __init__(self, name=None, parent=None, backup=False, factories=dict()):
         self.__name__ = name
         self.__parent__ = parent
@@ -123,14 +125,7 @@ class Directory(object):
         self.ignores = list()
         self._deleted = list()
 
-    @property
-    def child_directory_factory(self):
-        return Directory
-
-    @property
-    def fs_path(self):
-        return self.path
-
+    @finalize
     def __call__(self):
         if IDirectory.providedBy(self):
             try:
@@ -161,6 +156,7 @@ class Directory(object):
                         *target.fs_path[:-1] + ['.%s.bak' % target.name])
                     shutil.copyfile(abspath, bakpath)
 
+    @finalize
     def __setitem__(self, name, value):
         if IFile.providedBy(value) or IDirectory.providedBy(value):
             if IDirectory.providedBy(value):
@@ -170,6 +166,7 @@ class Directory(object):
             return
         raise ValueError(u"Unknown child node.")
 
+    @finalize
     def __getitem__(self, name):
         if not name in self.storage:
             filepath = os.path.join(*self.fs_path + [name])
@@ -185,11 +182,13 @@ class Directory(object):
                         self[name] = File()
         return self.storage[name]
 
+    @finalize
     def __delitem__(self, name):
         if os.path.exists(os.path.join(*self.fs_path + [name])):
             self._deleted.append(name)
         del self.storage[name]
 
+    @finalize
     def __iter__(self):
         try:
             existing = set(os.listdir(os.path.join(*self.fs_path)))
@@ -206,6 +205,7 @@ class Directory(object):
                 continue
             yield key
 
+    @default
     def _factory_for_ending(self, name):
         def match(keys, key):
             keys = sorted(keys)
@@ -225,3 +225,15 @@ class Directory(object):
             return self.factories[factory_keys[0]]
         if factory_keys[1]:
             return file_factories[factory_keys[1]]
+
+
+class Directory(object):
+    """Object mapping a file system directory.
+    """
+    __metaclass__ = plumber
+    __plumbing__ = (
+        Adopt,
+        Reference,
+        Nodify,
+        DirectoryStorage,
+    )
