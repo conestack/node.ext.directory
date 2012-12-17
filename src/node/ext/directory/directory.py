@@ -55,9 +55,9 @@ class File(object):
                 self._data = None
             else:
                 self._data = ''
-            if os.path.exists(os.path.sep.join(self.path)):
+            if os.path.exists(os.path.sep.join(self.fs_path)):
                 mode = self.mode == MODE_BINARY and 'rb' or 'r'
-                with open(os.path.sep.join(self.path), mode) as file:
+                with open(os.path.sep.join(self.fs_path), mode) as file:
                     self._data = file.read()
         return self._data
     
@@ -78,15 +78,19 @@ class File(object):
         self.data = '\n'.join(lines)
     
     lines = property(_get_lines, _set_lines)
-    
+
+    @property
+    def fs_path(self):
+        return self.path
+
     def __call__(self):
-        exists = os.path.exists(os.path.join(*self.path))
+        exists = os.path.exists(os.path.join(*self.fs_path))
         if not hasattr(self, '_changed') and exists:
             # do not overwrite file if not changed. if not exists but set
             # and empty, write empty file. 
             return
         mode = self.mode == MODE_BINARY and 'wb' or 'w'
-        with open(os.path.join(*self.path), mode) as file:
+        with open(os.path.join(*self.fs_path), mode) as file:
             file.write(self.data)
 
 
@@ -123,22 +127,26 @@ class Directory(object):
     def child_directory_factory(self):
         return Directory
 
+    @property
+    def fs_path(self):
+        return self.path
+
     def __call__(self):
         if IDirectory.providedBy(self):
             try:
-                os.mkdir(os.path.join(*self.path))
+                os.mkdir(os.path.join(*self.fs_path))
             except OSError, e:
                 # Ignore ``already exists``.
                 if e.errno != 17:
                     raise e
         for name in self._deleted:
-            abspath = os.path.join(*self.path + [name])
+            abspath = os.path.join(*self.fs_path + [name])
             if os.path.exists(abspath):
                 if os.path.isdir(abspath):
                     shutil.rmtree(abspath)
                 else:
                     os.remove(abspath)
-                    bakpath = os.path.join(*self.path + ['.%s.bak' % name])
+                    bakpath = os.path.join(*self.fs_path + ['.%s.bak' % name])
                     if os.path.exists(bakpath):
                         os.remove(bakpath)
                 continue
@@ -147,10 +155,10 @@ class Directory(object):
                 target()
             elif IFile.providedBy(target):
                 target()
-                abspath = os.path.join(*target.path)
+                abspath = os.path.join(*target.fs_path)
                 if self.backup and os.path.exists(abspath):
                     bakpath = os.path.join(
-                        *target.path[:-1] + ['.%s.bak' % target.name])
+                        *target.fs_path[:-1] + ['.%s.bak' % target.name])
                     shutil.copyfile(abspath, bakpath)
 
     def __setitem__(self, name, value):
@@ -164,7 +172,7 @@ class Directory(object):
 
     def __getitem__(self, name):
         if not name in self.storage:
-            filepath = os.path.join(*self.path + [name])
+            filepath = os.path.join(*self.fs_path + [name])
             if os.path.exists(filepath):
                 if os.path.isdir(filepath):
                     self[name] = self.child_directory_factory()
@@ -178,13 +186,13 @@ class Directory(object):
         return self.storage[name]
 
     def __delitem__(self, name):
-        if os.path.exists(os.path.join(*self.path + [name])):
+        if os.path.exists(os.path.join(*self.fs_path + [name])):
             self._deleted.append(name)
         del self.storage[name]
 
     def __iter__(self):
         try:
-            existing = set(os.listdir(os.path.join(*self.path)))
+            existing = set(os.listdir(os.path.join(*self.fs_path)))
         except OSError:
             existing = set()
         for key in self.storage:
