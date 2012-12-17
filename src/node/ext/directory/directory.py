@@ -108,7 +108,7 @@ class Directory(object):
     )
     implements(IDirectory)
     backup = True
-    
+
     def __init__(self, name=None, parent=None, backup=False, factories=dict()):
         self.__name__ = name
         self.__parent__ = parent
@@ -118,6 +118,10 @@ class Directory(object):
         # keys to ignore
         self.ignores = list()
         self._deleted = list()
+
+    @property
+    def child_directory_factory(self):
+        return Directory
 
     def __call__(self):
         if IDirectory.providedBy(self):
@@ -163,7 +167,7 @@ class Directory(object):
             filepath = os.path.join(*self.path + [name])
             if os.path.exists(filepath):
                 if os.path.isdir(filepath):
-                    self[name] = Directory()
+                    self[name] = self.child_directory_factory()
                 else:
                     factory = self._factory_for_ending(name)
                     if factory:
@@ -172,12 +176,12 @@ class Directory(object):
                         # default
                         self[name] = File()
         return self.storage[name]
-    
+
     def __delitem__(self, name):
         if os.path.exists(os.path.join(*self.path + [name])):
             self._deleted.append(name)
         del self.storage[name]
-    
+
     def __iter__(self):
         try:
             existing = set(os.listdir(os.path.join(*self.path)))
@@ -193,7 +197,7 @@ class Directory(object):
             if key in self.ignores:
                 continue
             yield key
-    
+
     def _factory_for_ending(self, name):
         def match(keys, key):
             keys = sorted(keys)
