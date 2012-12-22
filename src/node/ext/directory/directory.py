@@ -150,7 +150,13 @@ class DirectoryStorage(DictStorage):
                 target()
             elif IFile.providedBy(target):
                 target()
-                abspath = os.path.join(*target.fs_path)
+                # Use fs_path if provided by child, otherwise fallback to path
+                # XXX: deprecate the fallback use of path
+                if hasattr(target, 'fs_path'):
+                    fs_path = target.fs_path
+                else:
+                    fs_path = target.path
+                abspath = os.path.join(*fs_path)
                 if self.backup and os.path.exists(abspath):
                     bakpath = os.path.join(
                         *target.fs_path[:-1] + ['.%s.bak' % target.name])
