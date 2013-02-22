@@ -6,7 +6,7 @@ from setuptools import (
 
 
 version = '0.2'
-shortdesc = "Filesystem Directory Abstraction based on Nodes"
+shortdesc = "Filesystem directory abstraction based on nodes"
 longdesc = open(os.path.join(os.path.dirname(__file__), 'README.rst')).read()
 longdesc += open(os.path.join(os.path.dirname(__file__), 'LICENSE.rst')).read()
 
@@ -16,11 +16,12 @@ setup(name='node.ext.directory',
       description=shortdesc,
       long_description=longdesc,
       classifiers=[
-          'Development Status :: 3 - Alpha',
-          'License :: OSI Approved :: GNU General Public License (GPL)',
+          'License :: OSI Approved :: BSD License',
+          'Intended Audience :: Developers',
+          'Topic :: Software Development',
           'Operating System :: OS Independent',
           'Programming Language :: Python',
-      ], # Get strings from http://www.python.org/pypi?:action=list_classifiers
+      ],
       keywords='',
       author='BlueDynamics Alliance',
       author_email='dev@bluedynamics.com',

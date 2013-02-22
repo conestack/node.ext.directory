@@ -1,7 +1,7 @@
 node.ext.directory
 ==================
 
-Filesystem Directory Abstraction based on Nodes.
+Filesystem directory abstraction based on nodes.
 
 
 Usage
