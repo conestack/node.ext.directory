@@ -6,8 +6,11 @@ class Test_Directory(unittest.TestCase):
     tests for node.ext.directory:directory.py:Directory
     """
     def test_it(self):
-        #from node.ext.directory import Directory
-        pass
+        import tempfile
+        tempdir = tempfile.mkdtemp()
+        from node.ext.directory import Directory
+        di = Directory(tempdir)
+        self.assertTrue(di)
 
 
 class Test_File(unittest.TestCase):
@@ -142,7 +145,8 @@ class Test_DirectoryStorage(unittest.TestCase):
         tempdir = tempfile.mkdtemp()
 
         #print(help(DirectoryStorage))
-        #ds = DirectoryStorage(tempdir)
+        ds = DirectoryStorage(tempdir)
+        self.assertTrue(ds)
         #print ('ds.child_directory_factory:')
         #print ds.child_directory_factory
 
@@ -151,7 +155,7 @@ class Test_DirectoryStorage(unittest.TestCase):
 
     def test_factory_for_ending(self):
         """
-        test 
+        test
         """
         from node.ext.directory import Directory
         import tempfile
@@ -165,7 +169,6 @@ class Test_DirectoryStorage(unittest.TestCase):
 #        self.assertTrue(0)
 
 
-
 class Test_Factories(unittest.TestCase):
     """
     another approach at testing stuff in directory.py
@@ -174,15 +177,14 @@ class Test_Factories(unittest.TestCase):
         """
         test some stuff
         covers DirectoryStorage.__init__ :-)
+        and  DirectoryStorage.__call__
         """
         from node.ext.directory import Directory
         import tempfile
         tempdir = tempfile.mkdtemp()
         dire = Directory(tempdir)
         self.assertEqual(dire.factories, {})
+        dire()  # call it to save it
 
         #print dir(dire)
         #self.assertTrue(0)
-
-
-
