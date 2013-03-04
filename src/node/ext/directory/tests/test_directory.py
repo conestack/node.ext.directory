@@ -181,8 +181,8 @@ class Test_Factories(unittest.TestCase):
         dire = Directory(tempdir)
         self.assertEqual(dire.factories, {})
 
-        print dir(dire)
-        self.assertTrue(0)
+        #print dir(dire)
+        #self.assertTrue(0)
 
 
 
