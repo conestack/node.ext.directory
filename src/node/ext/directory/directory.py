@@ -89,7 +89,7 @@ class File(object):
         exists = os.path.exists(os.path.join(*self.fs_path))
         if not hasattr(self, '_changed') and exists:
             # do not overwrite file if not changed. if not exists but set
-            # and empty, write empty file. 
+            # and empty, write empty file.
             return
         mode = self.mode == MODE_BINARY and 'wb' or 'w'
         with open(os.path.join(*self.fs_path), mode) as file:
