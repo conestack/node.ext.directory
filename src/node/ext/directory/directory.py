@@ -182,7 +182,13 @@ class DirectoryStorage(DictStorage):
                 else:
                     factory = self._factory_for_ending(name)
                     if factory:
-                        self[name] = factory()
+                        try:
+                            self[name] = factory()
+                        except TypeError:
+                            #happens if the factory cannot be called without 
+                            #args (e.g. .pt)
+                            #in this case we treat it as a flat file
+                            self[name]=File()
                     else:
                         # default
                         self[name] = File()
