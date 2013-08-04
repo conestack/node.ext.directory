@@ -23,6 +23,9 @@ class IDirectory(ICallable):
     backup = Attribute(u"Create backup files of handled files. Defaults "
                         "to False")
 
+    child_directory_factory = Attribute(u"Factory creating concrete node "
+                                        u"instances for directory children")
+
     def __setitem__(name, value):
         """Set item inside this directory.
 

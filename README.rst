@@ -19,6 +19,12 @@ Contributors
 Changes
 =======
 
+0.3dev
+------
+
+- Update directory interface.
+  [rnix, 2013-08-04]
+
 0.2
 ---
 
