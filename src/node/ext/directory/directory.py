@@ -31,15 +31,7 @@ MODE_BINARY = 1
 
 
 @implementer(IFile)
-class File(object):
-    __metaclass__ = plumber
-    __plumbing__ = (
-        Adopt,
-        DefaultInit,
-        Reference,
-        Nodify,
-        DictStorage,
-    )
+class FileStorage(DictStorage):
 
     def _get_mode(self):
         if not hasattr(self, '_mode'):
@@ -49,7 +41,7 @@ class File(object):
     def _set_mode(self, mode):
         self._mode = mode
 
-    mode = property(_get_mode, _set_mode)
+    mode = default(property(_get_mode, _set_mode))
 
     def _get_data(self):
         if not hasattr(self, '_data'):
@@ -67,7 +59,7 @@ class File(object):
         setattr(self, '_changed', True)
         self._data = data
 
-    data = property(_get_data, _set_data)
+    data = default(property(_get_data, _set_data))
 
     def _get_lines(self):
         if self.mode == MODE_BINARY:
@@ -79,12 +71,14 @@ class File(object):
             raise RuntimeError(u"Cannot write lines to binary file.")
         self.data = '\n'.join(lines)
 
-    lines = property(_get_lines, _set_lines)
+    lines = default(property(_get_lines, _set_lines))
 
+    @default
     @property
     def fs_path(self):
         return self.path
 
+    @finalize
     def __call__(self):
         exists = os.path.exists(os.path.join(*self.fs_path))
         if not hasattr(self, '_changed') and exists:
@@ -94,6 +88,17 @@ class File(object):
         mode = self.mode == MODE_BINARY and 'wb' or 'w'
         with open(os.path.join(*self.fs_path), mode) as file:
             file.write(self.data)
+
+
+class File(object):
+    __metaclass__ = plumber
+    __plumbing__ = (
+        Adopt,
+        DefaultInit,
+        Reference,
+        Nodify,
+        FileStorage,
+    )
 
 
 # global file factories

@@ -22,6 +22,9 @@ Changes
 0.3dev
 ------
 
+- move file logic in ``FileStorage`` behavior.
+  [rnix, 2013-08-06]
+
 - make ``file_factories`` a class property on directory storage.
   [rnix, 2013-08-06]
 
