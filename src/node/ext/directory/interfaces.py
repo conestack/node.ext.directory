@@ -26,6 +26,8 @@ class IDirectory(ICallable):
     child_directory_factory = Attribute(u"Factory creating concrete node "
                                         u"instances for directory children")
 
+    ignores = Attribute(u"child keys to ignore")
+
     def __setitem__(name, value):
         """Set item inside this directory.
 

@@ -103,6 +103,7 @@ file_factories = dict()
 @implementer(IDirectory)
 class DirectoryStorage(DictStorage):
     backup = default(True)
+    ignores = default(list())
 
     @default
     @property
@@ -121,8 +122,6 @@ class DirectoryStorage(DictStorage):
         self.backup = backup
         # local file factories, overrule global factories
         self.factories = factories
-        # keys to ignore
-        self.ignores = list()
         self._deleted = list()
 
     @finalize
