@@ -1,4 +1,5 @@
 from directory import (
+    FileStorage,
     File,
     DirectoryStorage,
     Directory,
