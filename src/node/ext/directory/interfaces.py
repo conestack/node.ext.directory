@@ -1,6 +1,7 @@
 from zope.interface import Attribute
 from zope.lifecycleevent import IObjectAddedEvent
 from node.interfaces import (
+    INode,
     ILeaf,
     ICallable,
 )
@@ -11,12 +12,12 @@ class IFileAddedEvent(IObjectAddedEvent):
     """
 
 
-class IFile(ICallable, ILeaf):
+class IFile(INode, ILeaf, ICallable):
     """Marker interface for a file.
     """
 
 
-class IDirectory(ICallable):
+class IDirectory(INode, ICallable):
     """Directory target interface.
     """
 
@@ -26,15 +27,8 @@ class IDirectory(ICallable):
     child_directory_factory = Attribute(u"Factory creating concrete node "
                                         u"instances for directory children")
 
+    file_factories = Attribute(u"Dict containing file names or endings as "
+                               u"keys with the corresponding file node "
+                               u"creating factory.")
+
     ignores = Attribute(u"child keys to ignore")
-
-    def __setitem__(name, value):
-        """Set item inside this directory.
-
-        @param name: name of the item (either a file name or a directory name)
-        
-        @param value: either ``IFile`` implementation or None. If
-                      value is None, create ``IDirectory`` child.
-        
-        @raise ValueError: If child for name already set.
-        """

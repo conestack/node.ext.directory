@@ -22,8 +22,15 @@ Changes
 0.3dev
 ------
 
-- Update directory interface.
-  [rnix, 2013-08-04]
+- make ``file_factories`` a class property on directory storage.
+  [rnix, 2013-08-06]
+
+- make ``ignores`` a class property on directory storage.
+  [rnix, 2013-08-06]
+
+- Cleanup interfaces.
+  [rnix, 2013-08-06]
+
 
 0.2
 ---

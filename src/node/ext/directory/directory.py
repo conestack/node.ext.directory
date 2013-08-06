@@ -104,6 +104,14 @@ file_factories = dict()
 class DirectoryStorage(DictStorage):
     backup = default(True)
     ignores = default(list())
+    # XXX: rename later to file_factories, keep now as is for b/c reasons
+    factories = default(dict())
+
+    @default
+    @property
+    def file_factories(self):
+        # temporary, see above
+        return self.factories
 
     @default
     @property
@@ -120,8 +128,9 @@ class DirectoryStorage(DictStorage):
         self.__name__ = name
         self.__parent__ = parent
         self.backup = backup
-        # local file factories, overrule global factories
-        self.factories = factories
+        # override file factories if given
+        if factories:
+            self.factories = factories
         self._deleted = list()
 
     @finalize
@@ -227,13 +236,13 @@ class DirectoryStorage(DictStorage):
                 if key.endswith(possible):
                     return possible
         factory_keys = [
-            match(self.factories.keys(), name),
+            match(self.file_factories.keys(), name),
             match(file_factories.keys(), name),
         ]
         if factory_keys[0]:
             if factory_keys[1] and len(factory_keys[1]) > len(factory_keys[0]):
                 return file_factories[factory_keys[1]]
-            return self.factories[factory_keys[0]]
+            return self.file_factories[factory_keys[0]]
         if factory_keys[1]:
             return file_factories[factory_keys[1]]
 
