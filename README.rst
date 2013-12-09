@@ -22,6 +22,10 @@ Changes
 0.3dev
 ------
 
+- introduce ``default_file_factory`` on directories for controlling default
+  file child creation.
+  [rnix, 2013-12-09]
+
 - move file logic in ``FileStorage`` behavior.
   [rnix, 2013-08-06]
 

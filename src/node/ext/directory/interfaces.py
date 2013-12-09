@@ -27,6 +27,9 @@ class IDirectory(INode, ICallable):
     child_directory_factory = Attribute(u"Factory creating concrete node "
                                         u"instances for directory children")
 
+    default_file_factory = Attribute(u"Default factory creating concrete node "
+                                     u"instances for file children")
+
     file_factories = Attribute(u"Dict containing file names or endings as "
                                u"keys with the corresponding file node "
                                u"creating factory.")

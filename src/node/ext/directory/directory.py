@@ -109,6 +109,8 @@ file_factories = dict()
 class DirectoryStorage(DictStorage):
     backup = default(True)
     ignores = default(list())
+    default_file_factory = default(File)
+
     # XXX: rename later to file_factories, keep now as is for b/c reasons
     factories = default(dict())
 
@@ -198,13 +200,16 @@ class DirectoryStorage(DictStorage):
                         try:
                             self[name] = factory()
                         except TypeError:
-                            #happens if the factory cannot be called without 
-                            #args (e.g. .pt)
-                            #in this case we treat it as a flat file
-                            self[name]=File()
+                            # happens if the factory cannot be called without 
+                            # args (e.g. .pt)
+                            # in this case we treat it as a flat file
+                            # XXX: remove try/except and fallback, for
+                            #      described case child factories are supposed
+                            #      to be used
+                            self[name] = File()
                     else:
                         # default
-                        self[name] = File()
+                        self[name] = self.default_file_factory()
         return self.storage[name]
 
     @finalize
