@@ -19,8 +19,8 @@ Contributors
 Changes
 =======
 
-0.3dev
-------
+0.3
+---
 
 - introduce ``default_file_factory`` on directories for controlling default
   file child creation.
