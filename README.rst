@@ -19,6 +19,13 @@ Contributors
 Changes
 =======
 
+0.4.dev0
+--------
+
+- Use ``plumbing`` decorator.
+  [rnix, 2014-08-25]
+
+
 0.3
 ---
 

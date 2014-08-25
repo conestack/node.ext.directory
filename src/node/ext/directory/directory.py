@@ -1,7 +1,7 @@
 import os
 import shutil
 from plumber import (
-    plumber,
+    plumbing,
     default,
     finalize,
 )
@@ -90,15 +90,14 @@ class FileStorage(DictStorage):
             file.write(self.data)
 
 
+@plumbing(
+    Adopt,
+    DefaultInit,
+    Reference,
+    Nodify,
+    FileStorage)
 class File(object):
-    __metaclass__ = plumber
-    __plumbing__ = (
-        Adopt,
-        DefaultInit,
-        Reference,
-        Nodify,
-        FileStorage,
-    )
+    pass
 
 
 # global file factories
@@ -257,13 +256,11 @@ class DirectoryStorage(DictStorage):
             return file_factories[factory_keys[1]]
 
 
+@plumbing(
+    Adopt,
+    Reference,
+    Nodify,
+    DirectoryStorage)
 class Directory(object):
     """Object mapping a file system directory.
     """
-    __metaclass__ = plumber
-    __plumbing__ = (
-        Adopt,
-        Reference,
-        Nodify,
-        DirectoryStorage,
-    )
