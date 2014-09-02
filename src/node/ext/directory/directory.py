@@ -13,6 +13,10 @@ from node.behaviors import (
     Nodify,
     DictStorage,
 )
+from node.locking import (
+    TreeLock,
+    locktree,
+)
 from node.interfaces import IRoot
 from zope.interface import (
     implementer,
@@ -79,6 +83,7 @@ class FileStorage(DictStorage):
         return self.path
 
     @finalize
+    @locktree
     def __call__(self):
         exists = os.path.exists(os.path.join(*self.fs_path))
         if not hasattr(self, '_changed') and exists:
@@ -140,6 +145,7 @@ class DirectoryStorage(DictStorage):
         self._deleted = list()
 
     @finalize
+    @locktree
     def __call__(self):
         if IDirectory.providedBy(self):
             try:
@@ -178,17 +184,21 @@ class DirectoryStorage(DictStorage):
 
     @finalize
     def __setitem__(self, name, value):
+        if not name:
+            raise KeyError('Empty key not allowed in directories')
         if IFile.providedBy(value) or IDirectory.providedBy(value):
             if IDirectory.providedBy(value):
                 value.backup = self.backup
             self.storage[name] = value
             objectEventNotify(FileAddedEvent(value))
             return
-        raise ValueError(u"Unknown child node.")
+        raise ValueError('Unknown child node.')
 
     @finalize
     def __getitem__(self, name):
-        if not name in self.storage:
+        if name in self.storage:
+            return self.storage[name]
+        with TreeLock(self):
             filepath = os.path.join(*self.fs_path + [name])
             if os.path.exists(filepath):
                 if os.path.isdir(filepath):

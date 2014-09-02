@@ -119,6 +119,11 @@ Create a new directory::
 
 Add subdirectories::
 
+    >>> directory[''] = Directory()
+    Traceback (most recent call last):
+      ...
+    KeyError: 'Empty key not allowed in directories'
+
     >>> directory['subdir1'] = Directory()
     >>> directory['subdir2'] = Directory()
     >>> directory.printtree()

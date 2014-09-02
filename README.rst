@@ -22,6 +22,12 @@ Changes
 0.4.dev0
 --------
 
+- Tree locking on modification.
+  [rnix, 2014-09-02]
+
+- Prevent empty keys in ``__setitem__``.
+  [rnix, 2014-09-02]
+
 - Use ``plumbing`` decorator.
   [rnix, 2014-08-25]
 
