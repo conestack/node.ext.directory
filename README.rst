@@ -19,8 +19,8 @@ Contributors
 Changes
 =======
 
-0.4.dev0
---------
+0.4 (unreleased)
+----------------
 
 - Tree locking on modification.
   [rnix, 2014-09-02]
