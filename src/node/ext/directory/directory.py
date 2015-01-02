@@ -196,10 +196,6 @@ class DirectoryStorage(DictStorage):
 
     @finalize
     def __getitem__(self, name):
-        # XXX: right now, if a child for key not exists, it gets automatically
-        #      created by registered factories. To behave more consistent in
-        #      node API means, this auto generation should become optional and
-        #      __getitem__ raises a key error as expected if a child not exists.
         if name in self.storage:
             return self.storage[name]
         with TreeLock(self):
