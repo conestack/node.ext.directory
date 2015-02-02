@@ -80,6 +80,8 @@ class FileStorage(DictStorage):
     @default
     @property
     def fs_path(self):
+        # seems more appropriate here:
+        #     return self.parent.fs_path + [self.name]
         return self.path
 
     @finalize
