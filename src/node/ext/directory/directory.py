@@ -113,6 +113,7 @@ file_factories = dict()
 
 @implementer(IDirectory)
 class DirectoryStorage(DictStorage):
+    fs_encoding = default('utf-8')
     backup = default(True)
     ignores = default(list())
     default_file_factory = default(File)
@@ -188,6 +189,7 @@ class DirectoryStorage(DictStorage):
     def __setitem__(self, name, value):
         if not name:
             raise KeyError('Empty key not allowed in directories')
+        name = self._encode_name(name)
         if IFile.providedBy(value) or IDirectory.providedBy(value):
             if IDirectory.providedBy(value):
                 value.backup = self.backup
@@ -198,6 +200,7 @@ class DirectoryStorage(DictStorage):
 
     @finalize
     def __getitem__(self, name):
+        name = self._encode_name(name)
         if name in self.storage:
             return self.storage[name]
         with TreeLock(self):
@@ -225,6 +228,7 @@ class DirectoryStorage(DictStorage):
 
     @finalize
     def __delitem__(self, name):
+        name = self._encode_name(name)
         if os.path.exists(os.path.join(*self.fs_path + [name])):
             self._deleted.append(name)
         del self.storage[name]
@@ -245,6 +249,12 @@ class DirectoryStorage(DictStorage):
             if key in self.ignores:
                 continue
             yield key
+
+    @default
+    def _encode_name(self, name):
+        if isinstance(name, unicode):
+            name = value.encode(self.fs_encoding)
+        return name
 
     @default
     def _factory_for_ending(self, name):

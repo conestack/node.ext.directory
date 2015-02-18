@@ -22,6 +22,9 @@ Changes
 0.4 (unreleased)
 ----------------
 
+- Consider filesystem encoding. Defaults to UTF-8.
+  [rnix, 2015-02-18]
+
 - Tree locking on modification.
   [rnix, 2014-09-02]
 
