@@ -68,6 +68,8 @@ class FileStorage(DictStorage):
     def _get_lines(self):
         if self.mode == MODE_BINARY:
             raise RuntimeError(u"Cannot read lines from binary file.")
+        if not self.data:
+            return []
         return self.data.split('\n')
 
     def _set_lines(self, lines):
