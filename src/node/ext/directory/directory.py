@@ -253,7 +253,7 @@ class DirectoryStorage(DictStorage):
     @default
     def _encode_name(self, name):
         if isinstance(name, unicode):
-            name = value.encode(self.fs_encoding)
+            name = name.encode(self.fs_encoding)
         return name
 
     @default
