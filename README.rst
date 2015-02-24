@@ -19,10 +19,18 @@ Contributors
 Changes
 =======
 
+
+0.5 (unreleased)
+----------------
+
+- no changes yet.
+
+
 0.4
 ---
 
 - Return empty list in ``File.lines`` if no data.
+  [rnix, 2015-02-18]
 
 - Consider filesystem encoding. Defaults to UTF-8.
   [rnix, 2015-02-18]
