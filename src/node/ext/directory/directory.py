@@ -158,18 +158,15 @@ class DirectoryStorage(DictStorage):
     def __call__(self):
         if IDirectory.providedBy(self):
             dir_path = os.path.join(*self.fs_path)
-            mode = self.fs_mode
             try:
-                if mode is not None:
-                    os.mkdir(dir_path, mode)
-                else:
-                    os.mkdir(dir_path)
+                os.mkdir(dir_path)
             except OSError, e:
                 # Ignore ``already exists``.
                 if e.errno != 17:
                     raise e
-                if mode is not None:
-                    os.chmod(dir_path, mode)
+            # Change file system mode if set
+            if self.fs_mode is not None:
+                os.chmod(dir_path, self.fs_mode)
         for name in self._deleted:
             abspath = os.path.join(*self.fs_path + [name])
             if os.path.exists(abspath):

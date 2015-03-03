@@ -20,10 +20,12 @@ Changes
 =======
 
 
-0.6 (unreleased)
-----------------
+0.5.1
+-----
 
-- no changes yet.
+- Always use ``os.chmod`` for setting directory permissions, not only if
+  already exists.
+  [rnix, 2015-03-03]
 
 
 0.5
