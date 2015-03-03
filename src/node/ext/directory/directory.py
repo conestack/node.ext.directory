@@ -36,6 +36,7 @@ MODE_BINARY = 1
 
 @implementer(IFile)
 class FileStorage(DictStorage):
+    fs_mode = default(None)
 
     def _get_mode(self):
         if not hasattr(self, '_mode'):
@@ -89,14 +90,16 @@ class FileStorage(DictStorage):
     @finalize
     @locktree
     def __call__(self):
-        exists = os.path.exists(os.path.join(*self.fs_path))
-        if not hasattr(self, '_changed') and exists:
-            # do not overwrite file if not changed. if not exists but set
-            # and empty, write empty file. 
-            return
-        mode = self.mode == MODE_BINARY and 'wb' or 'w'
-        with open(os.path.join(*self.fs_path), mode) as file:
-            file.write(self.data)
+        file_path = os.path.join(*self.fs_path)
+        exists = os.path.exists(file_path)
+        # Only write file if it's data has changed or not exists yet
+        if hasattr(self, '_changed') or not exists:
+            write_mode = self.mode == MODE_BINARY and 'wb' or 'w'
+            with open(file_path, write_mode) as file:
+                file.write(self.data)
+        # Change file system mode if set
+        if self.fs_mode is not None:
+            os.chmod(file_path, self.fs_mode)
 
 
 @plumbing(
@@ -116,6 +119,7 @@ file_factories = dict()
 @implementer(IDirectory)
 class DirectoryStorage(DictStorage):
     fs_encoding = default('utf-8')
+    fs_mode = default(None)
     backup = default(True)
     ignores = default(list())
     default_file_factory = default(File)
@@ -153,12 +157,19 @@ class DirectoryStorage(DictStorage):
     @locktree
     def __call__(self):
         if IDirectory.providedBy(self):
+            dir_path = os.path.join(*self.fs_path)
+            mode = self.fs_mode
             try:
-                os.mkdir(os.path.join(*self.fs_path))
+                if mode is not None:
+                    os.mkdir(dir_path, mode)
+                else:
+                    os.mkdir(dir_path)
             except OSError, e:
                 # Ignore ``already exists``.
                 if e.errno != 17:
                     raise e
+                if mode is not None:
+                    os.chmod(dir_path, mode)
         for name in self._deleted:
             abspath = os.path.join(*self.fs_path + [name])
             if os.path.exists(abspath):

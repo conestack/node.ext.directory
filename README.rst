@@ -20,10 +20,11 @@ Changes
 =======
 
 
-0.5 (unreleased)
-----------------
+0.5
+---
 
-- no changes yet.
+- Introduce ``fs_mode`` on directories and files.
+  [rnix, 2015-03-03]
 
 
 0.4
