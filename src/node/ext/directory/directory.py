@@ -211,8 +211,10 @@ class DirectoryStorage(DictStorage):
     @finalize
     def __getitem__(self, name):
         name = self._encode_name(name)
-        if name in self.storage:
+        try:
             return self.storage[name]
+        except KeyError:
+            pass
         with TreeLock(self):
             filepath = os.path.join(*self.fs_path + [name])
             if os.path.exists(filepath):
@@ -222,6 +224,7 @@ class DirectoryStorage(DictStorage):
                     factory = self._factory_for_ending(name)
                     if factory:
                         try:
+                            # XXX: write to self.storage
                             self[name] = factory()
                         except TypeError:
                             # happens if the factory cannot be called without 
@@ -230,9 +233,11 @@ class DirectoryStorage(DictStorage):
                             # XXX: remove try/except and fallback, for
                             #      described case child factories are supposed
                             #      to be used
+                            # XXX: write to self.storage
                             self[name] = File()
                     else:
                         # default
+                        # XXX: write to self.storage
                         self[name] = self.default_file_factory()
         return self.storage[name]
 

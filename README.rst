@@ -20,10 +20,12 @@ Changes
 =======
 
 
-0.6 (unreleased)
-----------------
+0.5.2 (unreleased)
+------------------
 
-- no changes yet.
+- Use try/except instead of iteration to check whether directory child already
+  in memory.
+  [rnix, 2015-05-12]
 
 
 0.5.1
