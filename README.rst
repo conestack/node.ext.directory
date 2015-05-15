@@ -20,8 +20,8 @@ Changes
 =======
 
 
-0.5.2 (unreleased)
-------------------
+0.5.2
+-----
 
 - Use try/except instead of iteration to check whether directory child already
   in memory.
