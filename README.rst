@@ -20,6 +20,15 @@ Changes
 =======
 
 
+0.5.3
+-----
+
+- Remove deleted keys from internal reference after ``__call__`` in order
+  to return the correct result when adding a file or directory with the same
+  key again.
+  [rnix, 2015-07-20]
+
+
 0.5.2
 -----
 

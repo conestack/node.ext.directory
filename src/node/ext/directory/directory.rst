@@ -268,6 +268,9 @@ Delete file::
     >>> os.listdir(tempdir)
     ['root']
 
+    >>> directory._deleted
+    []
+
 Delete Directory::
 
     >>> del directory['root']['profile']

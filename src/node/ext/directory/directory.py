@@ -167,7 +167,8 @@ class DirectoryStorage(DictStorage):
             # Change file system mode if set
             if self.fs_mode is not None:
                 os.chmod(dir_path, self.fs_mode)
-        for name in self._deleted:
+        while self._deleted:
+            name = self._deleted.pop()
             abspath = os.path.join(*self.fs_path + [name])
             if os.path.exists(abspath):
                 if os.path.isdir(abspath):
