@@ -1,33 +1,23 @@
+from node.base import BaseNode
+from node.behaviors import Adopt
+from node.behaviors import DefaultInit
+from node.behaviors import DictStorage
+from node.behaviors import Nodify
+from node.behaviors import Reference
+from node.ext.directory.events import FileAddedEvent
+from node.ext.directory.interfaces import IDirectory
+from node.ext.directory.interfaces import IFile
+from node.interfaces import IRoot
+from node.locking import TreeLock
+from node.locking import locktree
+from plumber import default
+from plumber import finalize
+from plumber import plumbing
+from zope.component.event import objectEventNotify
+from zope.interface import alsoProvides
+from zope.interface import implementer
 import os
 import shutil
-from plumber import (
-    plumbing,
-    default,
-    finalize,
-)
-from node.base import BaseNode
-from node.behaviors import (
-    Adopt,
-    DefaultInit,
-    Reference,
-    Nodify,
-    DictStorage,
-)
-from node.locking import (
-    TreeLock,
-    locktree,
-)
-from node.interfaces import IRoot
-from zope.interface import (
-    implementer,
-    alsoProvides,
-)
-from zope.component.event import objectEventNotify
-from node.ext.directory.interfaces import (
-    IDirectory,
-    IFile,
-)
-from node.ext.directory.events import FileAddedEvent
 
 
 MODE_TEXT = 0

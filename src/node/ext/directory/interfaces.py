@@ -1,10 +1,8 @@
+from node.interfaces import ICallable
+from node.interfaces import ILeaf
+from node.interfaces import INode
 from zope.interface import Attribute
 from zope.lifecycleevent import IObjectAddedEvent
-from node.interfaces import (
-    INode,
-    ILeaf,
-    ICallable,
-)
 
 
 class IFileAddedEvent(IObjectAddedEvent):
