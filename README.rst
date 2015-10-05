@@ -23,7 +23,21 @@ Changes
 0.5.4 (unreleased)
 ------------------
 
-- No changes yet.
+- Check whether directory to be peristed already exists by name as file in
+  ``node.ext.directory.FileStorage.__call__``.
+  [rnix, 2015-10-05]
+
+- Implement fallback to ``path`` in
+  ``node.ext.directory.FileStorage.__call__`` if ``fs_path`` not exists.
+  [rnix, 2015-10-05]
+
+- Implement fallback to ``path`` in
+  ``node.ext.directory.FileStorage._get_data`` if ``fs_path`` not exists.
+  [rnix, 2015-10-05]
+
+- Set initial mode with ``self.mode`` property setter instead of internal
+  ``self._mode`` in ``node.ext.directory.FileStorage._get_mode``.
+  [rnix, 2015-10-05]
 
 
 0.5.3

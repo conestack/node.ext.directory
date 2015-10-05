@@ -3,20 +3,36 @@ the contract for ``agx.core.interfaces.ISource``,
 ``agx.core.interfaces.ITarget`` and 
 ``node.ext.directory.interfaces.IDirectory``.
 
+Test related imports::
+
+    >>> from node.behaviors import Adopt
+    >>> from node.behaviors import DefaultInit
+    >>> from node.behaviors import DictStorage
+    >>> from node.behaviors import Nodify
+    >>> from node.behaviors import Reference
+    >>> from node.ext.directory import Directory
+    >>> from node.ext.directory import File
+    >>> from node.ext.directory import MODE_BINARY
+    >>> from plumber import plumbing
+    >>> import node.ext.directory
+    >>> import os
+    >>> import shutil
+    >>> import tempfile
+
 Create test env::
 
-    >>> import os
-    >>> import tempfile
     >>> tempdir = tempfile.mkdtemp()
 
 Default file implementation::
 
-    >>> from node.ext.directory import File
     >>> filepath = os.path.join(tempdir, "file.txt")
     >>> file = File(filepath)
     >>> file.fs_mode = 0644
     >>> file.data
     ''
+
+    >>> file.lines
+    []
 
     >>> os.path.exists(filepath)
     False
@@ -60,14 +76,48 @@ Default file implementation::
     >>> out
     'a\nb\nc'
 
+Binary File::
+
+    >>> bin_filepath = os.path.join(tempdir, "file.bin")
+
+    >>> class BinaryFile(File):
+    ...     mode = MODE_BINARY
+
+    >>> bin_file = BinaryFile(bin_filepath)
+    >>> bin_file.data
+
+    >>> bin_file.lines
+    Traceback (most recent call last):
+      ...
+    RuntimeError: Cannot read lines from binary file.
+
+    >>> bin_file.lines = []
+    Traceback (most recent call last):
+      ...
+    RuntimeError: Cannot write lines to binary file.
+
+File with unicode name::
+
+    >>> directory = Directory(name=tempdir)
+    >>> directory[u'ä'] = File()
+
+    >>> directory()
+
+    >>> os.listdir(tempdir)
+    ['\xc3\x83\xc2\xa4', 'file.txt']
+
+    >>> directory = Directory(name=tempdir)
+    >>> directory[u'ä']
+    <File object 'Ã¤' at ...>
+
+    >>> os.remove(os.path.join(tempdir, u'ä'))
+
 Factories. resolved by registration length, shortest last::
 
-    >>> import node.ext.directory
     >>> node.ext.directory.file_factories
     {...}
 
-    >>> from node.ext.directory import Directory
-    >>> dir = Directory(tempdir)
+    >>> dir = Directory(name=tempdir)
     >>> dir.factories
     {}
 
@@ -104,9 +154,43 @@ Factories. resolved by registration length, shortest last::
     >>> del dir.factories['.txt']
     >>> del dir.factories['foo.txt']
 
+Factories can be given at directory init time::
+
+    >>> directory = Directory(name=tempdir, factories={
+    ...     '.txt': dummy_txt_factory
+    ... })
+
+    >>> directory.factories
+    {'.txt': <function dummy_txt_factory at ...>}
+
+Try to read file by broken factory, falls back to ``File``::
+
+    >>> class SaneFile(File):
+    ...     pass
+
+    >>> def sane_factory():
+    ...     return SaneFile()
+
+    >>> directory = Directory(name=tempdir, factories={
+    ...     '.txt': sane_factory
+    ... })
+
+    >>> directory['file.txt']
+    <SaneFile object 'file.txt' at ...>
+
+    >>> def broken_factory(param):
+    ...     return SaneFile()
+
+    >>> directory = Directory(name=tempdir, factories={
+    ...     '.txt': broken_factory
+    ... })
+
+    >>> directory['file.txt']
+    <File object 'file.txt' at ...>
+
 Create directory and read already created file by default factory::
 
-    >>> directory = Directory(tempdir)
+    >>> directory = Directory(name=tempdir)
     >>> directory.keys()
     ['file.txt']
 
@@ -114,10 +198,32 @@ Create directory and read already created file by default factory::
     >>> file
     <File object 'file.txt' at ...>
 
+Create a new directory which cannot be persisted::
+
+    >>> invalid_dir = os.path.join(tempdir, 'invalid_dir')
+
+    >>> with open(invalid_dir, 'w') as file:
+    ...     file.write('')
+
+    >>> os.path.exists(invalid_dir)
+    True
+
+    >>> os.path.isdir(invalid_dir)
+    False
+
+    >>> directory = Directory(name=invalid_dir)
+    >>> directory()
+    Traceback (most recent call last):
+      ...
+    KeyError: 'Attempt to create a directory with name which already exists 
+    as file'
+
+    >>> os.remove(invalid_dir)
+
 Create a new directory::
 
     >>> rootdir = os.path.join(tempdir, "root")
-    >>> directory = Directory(rootdir)
+    >>> directory = Directory(name=rootdir)
     >>> directory.fs_mode = 0750
 
     >>> os.path.exists(rootdir)
@@ -173,10 +279,58 @@ Add subdirectories::
     >>> oct(os.stat(subdir2_path).st_mode & 0777)
     '0755'
 
+Add invalid child node::
+
+    >>> @plumbing(
+    ...     Adopt,
+    ...     DefaultInit,
+    ...     Reference,
+    ...     Nodify,
+    ...     DictStorage)
+    ... class NoFile(object):
+    ...     pass
+
+    >>> directory['unknown'] = NoFile()
+    Traceback (most recent call last):
+      ...
+    ValueError: Unknown child node.
+
+Path lookup on ``File`` implementations without ``fs_path`` property falls back
+to ``path`` property::
+
+    >>> class FileWithoutFSPath(File):
+    ...     @property
+    ...     def fs_path(self):
+    ...         raise AttributeError
+
+    >>> no_fs_path_file = directory['no_fs_path_file'] = FileWithoutFSPath()
+    >>> hasattr(no_fs_path_file, 'fs_path')
+    False
+
+    >>> directory()
+
+    >>> no_fs_path = os.path.join(*directory.fs_path + ['no_fs_path_file'])
+    >>> os.path.exists(no_fs_path)
+    True
+
+    >>> os.remove(no_fs_path)
+
+Ignore children in directories::
+
+    >>> class DirectoryWithIgnores(Directory):
+    ...     ignores = ['file.txt']
+
+    >>> os.listdir(tempdir)
+    ['root', 'file.txt']
+
+    >>> directory = DirectoryWithIgnores(name=tempdir)
+    >>> directory.keys()
+    ['root']
+
 ``backup=True`` on init causes the directory to create backup files of existing
 files with postfix ``.bak``::
 
-    >>> directory = Directory(tempdir, backup=True)
+    >>> directory = Directory(name=tempdir, backup=True)
     >>> directory.keys()
     ['file.txt', 'root']
 
@@ -228,7 +382,7 @@ Check wether node index is set correctly::
 dump::
 
     >>> directory()
-    >>> directory = Directory(tempdir, backup=True)
+    >>> directory = Directory(name=tempdir, backup=True)
     >>> directory.factories['.py'] = File
     >>> directory.keys()
     ['file.txt', 'root']
@@ -289,5 +443,4 @@ Delete Directory::
 
 Clean up test Environment::
 
-    >>> import shutil
     >>> shutil.rmtree(tempdir)

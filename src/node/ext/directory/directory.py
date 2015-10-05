@@ -30,7 +30,7 @@ class FileStorage(DictStorage):
 
     def _get_mode(self):
         if not hasattr(self, '_mode'):
-            self._mode = MODE_TEXT
+            self.mode = MODE_TEXT
         return self._mode
 
     def _set_mode(self, mode):
@@ -44,9 +44,14 @@ class FileStorage(DictStorage):
                 self._data = None
             else:
                 self._data = ''
-            if os.path.exists(os.path.sep.join(self.fs_path)):
+            # Use fs_path if provided by child, otherwise fallback to path
+            if hasattr(self, 'fs_path'):
+                fs_path = self.fs_path
+            else:
+                fs_path = self.path
+            if os.path.exists(os.path.sep.join(fs_path)):
                 mode = self.mode == MODE_BINARY and 'rb' or 'r'
-                with open(os.path.sep.join(self.fs_path), mode) as file:
+                with open(os.path.sep.join(fs_path), mode) as file:
                     self._data = file.read()
         return self._data
 
@@ -80,7 +85,12 @@ class FileStorage(DictStorage):
     @finalize
     @locktree
     def __call__(self):
-        file_path = os.path.join(*self.fs_path)
+        # Use fs_path if provided by child, otherwise fallback to path
+        if hasattr(self, 'fs_path'):
+            fs_path = self.fs_path
+        else:
+            fs_path = self.path
+        file_path = os.path.join(*fs_path)
         exists = os.path.exists(file_path)
         # Only write file if it's data has changed or not exists yet
         if hasattr(self, '_changed') or not exists:
@@ -148,12 +158,15 @@ class DirectoryStorage(DictStorage):
     def __call__(self):
         if IDirectory.providedBy(self):
             dir_path = os.path.join(*self.fs_path)
+            if os.path.exists(dir_path) and not os.path.isdir(dir_path):
+                raise KeyError('Attempt to create a directory with name which '
+                               'already exists as file')
             try:
                 os.mkdir(dir_path)
             except OSError, e:
                 # Ignore ``already exists``.
                 if e.errno != 17:
-                    raise e
+                    raise e                                 #pragma NO COVER
             # Change file system mode if set
             if self.fs_mode is not None:
                 os.chmod(dir_path, self.fs_mode)
@@ -168,14 +181,12 @@ class DirectoryStorage(DictStorage):
                     bakpath = os.path.join(*self.fs_path + ['.%s.bak' % name])
                     if os.path.exists(bakpath):
                         os.remove(bakpath)
-                continue
         for name, target in self.items():
             if IDirectory.providedBy(target):
                 target()
             elif IFile.providedBy(target):
                 target()
                 # Use fs_path if provided by child, otherwise fallback to path
-                # XXX: deprecate the fallback use of path
                 if hasattr(target, 'fs_path'):
                     fs_path = target.fs_path
                 else:
@@ -215,7 +226,7 @@ class DirectoryStorage(DictStorage):
                     factory = self._factory_for_ending(name)
                     if factory:
                         try:
-                            # XXX: write to self.storage
+                            # XXX: write to self.storage to suppress add event
                             self[name] = factory()
                         except TypeError:
                             # happens if the factory cannot be called without 
@@ -224,11 +235,11 @@ class DirectoryStorage(DictStorage):
                             # XXX: remove try/except and fallback, for
                             #      described case child factories are supposed
                             #      to be used
-                            # XXX: write to self.storage
+                            # XXX: write to self.storage to suppress add event
                             self[name] = File()
                     else:
                         # default
-                        # XXX: write to self.storage
+                        # XXX: write to self.storage to suppress add event
                         self[name] = self.default_file_factory()
         return self.storage[name]
 
