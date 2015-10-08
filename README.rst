@@ -20,8 +20,8 @@ Changes
 =======
 
 
-0.5.4 (unreleased)
-------------------
+0.5.4
+-----
 
 - Check whether directory to be peristed already exists by name as file in
   ``node.ext.directory.FileStorage.__call__``.

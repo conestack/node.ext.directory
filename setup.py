@@ -3,7 +3,7 @@ from setuptools import setup
 import os
 
 
-version = '0.5.4.dev0'
+version = '0.5.4'
 shortdesc = "Filesystem directory abstraction based on nodes"
 longdesc = open(os.path.join(os.path.dirname(__file__), 'README.rst')).read()
 longdesc += open(os.path.join(os.path.dirname(__file__), 'LICENSE.rst')).read()
