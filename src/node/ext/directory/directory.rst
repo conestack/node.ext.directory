@@ -103,8 +103,8 @@ File with unicode name::
 
     >>> directory()
 
-    >>> os.listdir(tempdir)
-    ['\xc3\x83\xc2\xa4', 'file.txt']
+    >>> sorted(os.listdir(tempdir))
+    ['file.txt', '\xc3\x83\xc2\xa4']
 
     >>> directory = Directory(name=tempdir)
     >>> directory[u'ä']
