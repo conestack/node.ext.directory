@@ -4,7 +4,6 @@
 *.pyo
 *.wpr
 *~
-.*
 /bin/
 /coverage/
 /develop-eggs/
