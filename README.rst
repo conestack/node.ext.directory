@@ -14,6 +14,9 @@ Write me (or read tests).
 TestCoverage
 ============
 
+.. image:: https://travis-ci.org/bluedynamics/node.ext.directory.svg?branch=master
+    :target: https://travis-ci.org/bluedynamics/node.ext.directory
+
 Summary of the test coverage report::
 
     lines   cov%   module
