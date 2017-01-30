@@ -8,7 +8,7 @@ Filesystem directory abstraction based on
 Usage
 =====
 
-write me (or read tests)
+Write me (or read tests).
 
 
 TestCoverage
