@@ -352,8 +352,8 @@ Ignore children in directories:
     >>> class DirectoryWithIgnores(Directory):
     ...     ignores = ['file.txt']
 
-    >>> os.listdir(tempdir)
-    ['root', 'file.txt']
+    >>> sorted(os.listdir(tempdir))
+    ['file.txt', 'root']
 
     >>> directory = DirectoryWithIgnores(name=tempdir)
     >>> directory.keys()
