@@ -7,6 +7,8 @@ from node.behaviors import Reference
 from node.ext.directory.events import FileAddedEvent
 from node.ext.directory.interfaces import IDirectory
 from node.ext.directory.interfaces import IFile
+from node.ext.directory.interfaces import MODE_BINARY
+from node.ext.directory.interfaces import MODE_TEXT
 from node.interfaces import IRoot
 from node.locking import TreeLock
 from node.locking import locktree
@@ -20,13 +22,10 @@ import os
 import shutil
 
 
-MODE_TEXT = 0
-MODE_BINARY = 1
-
-
 @implementer(IFile)
 class FileStorage(DictStorage):
     fs_mode = default(None)
+    direct_sync = default(False)
 
     def _get_mode(self):
         if not hasattr(self, '_mode'):
@@ -97,6 +96,9 @@ class FileStorage(DictStorage):
             write_mode = self.mode == MODE_BINARY and 'wb' or 'w'
             with open(file_path, write_mode) as file:
                 file.write(self.data)
+                if self.direct_sync:
+                    file.flush()
+                    os.fsync(file.fileno())
         # Change file system mode if set
         if self.fs_mode is not None:
             os.chmod(file_path, self.fs_mode)

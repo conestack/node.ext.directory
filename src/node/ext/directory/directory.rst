@@ -1,9 +1,10 @@
-The Directory maps directly a filesystem directory. The implementation fits 
-the contract for ``agx.core.interfaces.ISource``,
-``agx.core.interfaces.ITarget`` and 
-``node.ext.directory.interfaces.IDirectory``.
+==================
+node.ext.directory
+==================
 
-Test related imports::
+Test related imports:
+
+.. code-block:: pycon
 
     >>> from node.behaviors import Adopt
     >>> from node.behaviors import DefaultInit
@@ -19,15 +20,20 @@ Test related imports::
     >>> import shutil
     >>> import tempfile
 
-Create test env::
+Create test env:
+
+.. code-block:: pycon
 
     >>> tempdir = tempfile.mkdtemp()
 
-Default file implementation::
+Default file implementation:
+
+.. code-block:: pycon
 
     >>> filepath = os.path.join(tempdir, "file.txt")
     >>> file = File(filepath)
     >>> file.fs_mode = 0644
+    >>> file.direct_sync = True
     >>> file.data
     ''
 
@@ -76,7 +82,9 @@ Default file implementation::
     >>> out
     'a\nb\nc'
 
-Binary File::
+Binary File:
+
+.. code-block:: pycon
 
     >>> bin_filepath = os.path.join(tempdir, "file.bin")
 
@@ -96,7 +104,9 @@ Binary File::
       ...
     RuntimeError: Cannot write lines to binary file.
 
-File with unicode name::
+File with unicode name:
+
+.. code-block:: pycon
 
     >>> directory = Directory(name=tempdir)
     >>> directory[u'ä'] = File()
@@ -112,7 +122,9 @@ File with unicode name::
 
     >>> os.remove(os.path.join(tempdir, u'ä'))
 
-Factories. resolved by registration length, shortest last::
+Factories. resolved by registration length, shortest last:
+
+.. code-block:: pycon
 
     >>> node.ext.directory.file_factories
     {...}
@@ -154,7 +166,9 @@ Factories. resolved by registration length, shortest last::
     >>> del dir.factories['.txt']
     >>> del dir.factories['foo.txt']
 
-Factories can be given at directory init time::
+Factories can be given at directory init time:
+
+.. code-block:: pycon
 
     >>> directory = Directory(name=tempdir, factories={
     ...     '.txt': dummy_txt_factory
@@ -163,7 +177,9 @@ Factories can be given at directory init time::
     >>> directory.factories
     {'.txt': <function dummy_txt_factory at ...>}
 
-Try to read file by broken factory, falls back to ``File``::
+Try to read file by broken factory, falls back to ``File``:
+
+.. code-block:: pycon
 
     >>> class SaneFile(File):
     ...     pass
@@ -188,7 +204,9 @@ Try to read file by broken factory, falls back to ``File``::
     >>> directory['file.txt']
     <File object 'file.txt' at ...>
 
-Create directory and read already created file by default factory::
+Create directory and read already created file by default factory:
+
+.. code-block:: pycon
 
     >>> directory = Directory(name=tempdir)
     >>> directory.keys()
@@ -198,7 +216,9 @@ Create directory and read already created file by default factory::
     >>> file
     <File object 'file.txt' at ...>
 
-Create a new directory which cannot be persisted::
+Create a new directory which cannot be persisted:
+
+.. code-block:: pycon
 
     >>> invalid_dir = os.path.join(tempdir, 'invalid_dir')
 
@@ -220,7 +240,9 @@ Create a new directory which cannot be persisted::
 
     >>> os.remove(invalid_dir)
 
-Create a new directory::
+Create a new directory:
+
+.. code-block:: pycon
 
     >>> rootdir = os.path.join(tempdir, "root")
     >>> directory = Directory(name=rootdir)
@@ -236,14 +258,18 @@ Create a new directory::
     >>> oct(os.stat(rootdir).st_mode & 0777)
     '0750'
 
-Change permissions and call again::
+Change permissions and call again:
+
+.. code-block:: pycon
 
     >>> directory.fs_mode = 0700
     >>> directory()
     >>> oct(os.stat(rootdir).st_mode & 0777)
     '0700'
 
-Add subdirectories::
+Add subdirectories:
+
+.. code-block:: pycon
 
     >>> directory[''] = Directory()
     Traceback (most recent call last):
@@ -279,7 +305,9 @@ Add subdirectories::
     >>> oct(os.stat(subdir2_path).st_mode & 0777)
     '0755'
 
-Add invalid child node::
+Add invalid child node:
+
+.. code-block:: pycon
 
     >>> @plumbing(
     ...     Adopt,
@@ -296,7 +324,9 @@ Add invalid child node::
     ValueError: Unknown child node.
 
 Path lookup on ``File`` implementations without ``fs_path`` property falls back
-to ``path`` property::
+to ``path`` property:
+
+.. code-block:: pycon
 
     >>> class FileWithoutFSPath(File):
     ...     @property
@@ -315,7 +345,9 @@ to ``path`` property::
 
     >>> os.remove(no_fs_path)
 
-Ignore children in directories::
+Ignore children in directories:
+
+.. code-block:: pycon
 
     >>> class DirectoryWithIgnores(Directory):
     ...     ignores = ['file.txt']
@@ -328,7 +360,9 @@ Ignore children in directories::
     ['root']
 
 ``backup=True`` on init causes the directory to create backup files of existing
-files with postfix ``.bak``::
+files with postfix ``.bak``:
+
+.. code-block:: pycon
 
     >>> directory = Directory(name=tempdir, backup=True)
     >>> directory.keys()
@@ -364,7 +398,9 @@ files with postfix ``.bak``::
     >>> directory['root']['__init__.py']
     <File object '__init__.py' at ...>
 
-Check wether node index is set correctly::
+Check wether node index is set correctly:
+
+.. code-block:: pycon
 
     >>> directory.printtree()
     <class 'node.ext.directory.directory.Directory'>: /...
@@ -379,7 +415,9 @@ Check wether node index is set correctly::
     >>> len(directory._index)
     8
 
-dump::
+dump:
+
+.. code-block:: pycon
 
     >>> directory()
     >>> directory = Directory(name=tempdir, backup=True)
@@ -403,7 +441,9 @@ dump::
     >>> sorted(os.listdir(os.path.join(*directory['root'].path)))
     ['.__init__.py.bak', '__init__.py', 'profile', 'subdir1', 'subdir2']
 
-Delete file::
+Delete file:
+
+.. code-block:: pycon
 
     >>> del directory['file.txt']
     >>> len(directory._index)
@@ -425,7 +465,9 @@ Delete file::
     >>> directory._deleted
     []
 
-Delete Directory::
+Delete Directory:
+
+.. code-block:: pycon
 
     >>> del directory['root']['profile']
     >>> len(directory._index)
@@ -441,6 +483,8 @@ Delete Directory::
     >>> sorted(os.listdir(rootdir))
     ['.__init__.py.bak', '__init__.py', 'subdir1', 'subdir2']
 
-Clean up test Environment::
+Clean up test Environment:
+
+.. code-block:: pycon
 
     >>> shutil.rmtree(tempdir)

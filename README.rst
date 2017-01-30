@@ -1,7 +1,8 @@
 node.ext.directory
 ==================
 
-Filesystem directory abstraction based on nodes.
+Filesystem directory abstraction based on
+`node <https://pypi.python.org/pypi/node>`_.
 
 
 Usage
@@ -10,10 +11,23 @@ Usage
 write me (or read tests)
 
 
+TestCoverage
+============
+
+Summary of the test coverage report::
+
+    lines   cov%   module
+        7   100%   node.ext.directory.__init__
+      227   100%   node.ext.directory.directory
+        5   100%   node.ext.directory.events
+       34   100%   node.ext.directory.interfaces
+       13   100%   node.ext.directory.tests
+
+
 Contributors
 ============
 
-- Robert Niederreiter <rnix [at] squarewave [dot] at>
+- Robert Niederreiter (Author)
 
 
 Changes
@@ -23,7 +37,17 @@ Changes
 0.6 (unreleased)
 ----------------
 
-- No changes yet.
+- Introduce ``node.ext.directory.interfaces.IFile.direct_sync`` setting.
+  [rnix, 2017-01-30]
+
+- Complete ``node.ext.directory.interfaces.IFile`` and
+  ``node.ext.directory.interfaces.IDirectory`` to reflect implemented features.
+  [rnix, 2017-01-30]
+
+- Move ``node.ext.directory.directory.MODE_TEXT`` and
+  ``node.ext.directory.directory.MODE_BINARY`` to
+  ``node.ext.directory.interfaces``.
+  [rnix, 2017-01-30]
 
 
 0.5.4
