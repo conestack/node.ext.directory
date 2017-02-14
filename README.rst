@@ -36,9 +36,8 @@ Contributors
 Changes
 =======
 
-
-0.6 (unreleased)
-----------------
+0.6
+---
 
 - Introduce ``node.ext.directory.interfaces.IFile.direct_sync`` setting.
   [rnix, 2017-01-30]
