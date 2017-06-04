@@ -18,8 +18,12 @@ from plumber import plumbing
 from zope.component.event import objectEventNotify
 from zope.interface import alsoProvides
 from zope.interface import implementer
+import logging
 import os
 import shutil
+
+
+logger = logging.getLogger('node.ext.directory')
 
 
 @implementer(IFile)
@@ -62,14 +66,14 @@ class FileStorage(DictStorage):
 
     def _get_lines(self):
         if self.mode == MODE_BINARY:
-            raise RuntimeError(u"Cannot read lines from binary file.")
+            raise RuntimeError('Cannot read lines from binary file.')
         if not self.data:
             return []
         return self.data.split('\n')
 
     def _set_lines(self, lines):
         if self.mode == MODE_BINARY:
-            raise RuntimeError(u"Cannot write lines to binary file.")
+            raise RuntimeError('Cannot write lines to binary file.')
         self.data = '\n'.join(lines)
 
     lines = default(property(_get_lines, _set_lines))
@@ -107,7 +111,7 @@ class FileStorage(DictStorage):
 @plumbing(
     Adopt,
     DefaultInit,
-    Reference,
+    Reference,  # XXX: remove from default file
     Nodify,
     FileStorage)
 class File(object):
@@ -122,11 +126,10 @@ file_factories = dict()
 class DirectoryStorage(DictStorage):
     fs_encoding = default('utf-8')
     fs_mode = default(None)
-    backup = default(True)
     ignores = default(list())
     default_file_factory = default(File)
 
-    # XXX: rename later to file_factories, keep now as is for b/c reasons
+    # XXX: rename later to file_factories, keep now as is for B/C reasons
     factories = default(dict())
 
     @default
@@ -149,7 +152,10 @@ class DirectoryStorage(DictStorage):
     def __init__(self, name=None, parent=None, backup=False, factories=dict()):
         self.__name__ = name
         self.__parent__ = parent
-        self.backup = backup
+        if backup or hasattr(self, 'backup'):
+            logger.warning(
+                '``backup`` handling has been removed from ``Directory`` '
+                'implementation as of node.ext.directory 0.7')
         # override file factories if given
         if factories:
             self.factories = factories
@@ -161,14 +167,15 @@ class DirectoryStorage(DictStorage):
         if IDirectory.providedBy(self):
             dir_path = os.path.join(*self.fs_path)
             if os.path.exists(dir_path) and not os.path.isdir(dir_path):
-                raise KeyError('Attempt to create a directory with name which '
-                               'already exists as file')
+                raise KeyError(
+                    'Attempt to create a directory with name which already '
+                    'exists as file')
             try:
                 os.mkdir(dir_path)
-            except OSError, e:
+            except OSError as e:
                 # Ignore ``already exists``.
                 if e.errno != 17:
-                    raise e                                 #pragma NO COVER
+                    raise e                                   # pragma no cover
             # Change file system mode if set
             if self.fs_mode is not None:
                 os.chmod(dir_path, self.fs_mode)
@@ -180,9 +187,6 @@ class DirectoryStorage(DictStorage):
                     shutil.rmtree(abspath)
                 else:
                     os.remove(abspath)
-                    bakpath = os.path.join(*self.fs_path + ['.%s.bak' % name])
-                    if os.path.exists(bakpath):
-                        os.remove(bakpath)
         for name, target in self.items():
             if IDirectory.providedBy(target):
                 target()
@@ -194,10 +198,6 @@ class DirectoryStorage(DictStorage):
                 else:
                     fs_path = target.path
                 abspath = os.path.join(*fs_path)
-                if self.backup and os.path.exists(abspath):
-                    bakpath = os.path.join(
-                        *target.fs_path[:-1] + ['.%s.bak' % target.name])
-                    shutil.copyfile(abspath, bakpath)
 
     @finalize
     def __setitem__(self, name, value):
@@ -205,8 +205,6 @@ class DirectoryStorage(DictStorage):
             raise KeyError('Empty key not allowed in directories')
         name = self._encode_name(name)
         if IFile.providedBy(value) or IDirectory.providedBy(value):
-            if IDirectory.providedBy(value):
-                value.backup = self.backup
             self.storage[name] = value
             objectEventNotify(FileAddedEvent(value))
             return
@@ -218,32 +216,35 @@ class DirectoryStorage(DictStorage):
         try:
             return self.storage[name]
         except KeyError:
-            pass
-        with TreeLock(self):
-            filepath = os.path.join(*self.fs_path + [name])
-            if os.path.exists(filepath):
-                if os.path.isdir(filepath):
-                    self[name] = self.child_directory_factory()
-                else:
-                    factory = self._factory_for_ending(name)
-                    if factory:
-                        try:
-                            # XXX: write to self.storage to suppress add event
-                            self[name] = factory()
-                        except TypeError:
-                            # happens if the factory cannot be called without 
-                            # args (e.g. .pt)
-                            # in this case we treat it as a flat file
-                            # XXX: remove try/except and fallback, for
-                            #      described case child factories are supposed
-                            #      to be used
-                            # XXX: write to self.storage to suppress add event
-                            self[name] = File()
-                    else:
-                        # default
-                        # XXX: write to self.storage to suppress add event
-                        self[name] = self.default_file_factory()
+            self._create_child_by_factory(name)
         return self.storage[name]
+
+    @default
+    @locktree
+    def _create_child_by_factory(self, name):
+        filepath = os.path.join(*self.fs_path + [name])
+        if not os.path.exists(filepath):
+            return
+        if os.path.isdir(filepath):
+            # XXX: to suppress event notify
+            self[name] = self.child_directory_factory()
+            return
+        factory = self._factory_for_ending(name)
+        if not factory:
+            # XXX: to suppress event notify
+            self[name] = self.default_file_factory()
+            return
+        try:
+            # XXX: to suppress event notify
+            self[name] = factory()
+        except TypeError as e:
+            # happens if the factory cannot be called without args, in this
+            # case we treat it as a flat file.
+            # XXX: to suppress event notify
+            logger.error(
+                'File creation by factory failed. Fall back to ``File``. '
+                'Reason: {}'.format(e))
+            self[name] = File()
 
     @finalize
     def __delitem__(self, name):
@@ -261,8 +262,6 @@ class DirectoryStorage(DictStorage):
         for key in self.storage:
             existing.add(key)
         for key in existing:
-            if self.backup and key.endswith('.bak'):
-                continue
             if key in self._deleted:
                 continue
             if key in self.ignores:
@@ -278,10 +277,11 @@ class DirectoryStorage(DictStorage):
     @default
     def _factory_for_ending(self, name):
         def match(keys, key):
-            keys = sorted(keys)
-            keys = sorted(keys,
-                          cmp=lambda x, y: len(x) > len(y) and 1 or -1,
-                          reverse=True)
+            keys = sorted(
+                keys,
+                cmp=lambda x, y: len(x) > len(y) and 1 or -1,
+                reverse=True
+            )
             for possible in keys:
                 if key.endswith(possible):
                     return possible
@@ -299,7 +299,7 @@ class DirectoryStorage(DictStorage):
 
 @plumbing(
     Adopt,
-    Reference,
+    Reference,  # XXX: remove from default file
     Nodify,
     DirectoryStorage)
 class Directory(object):

@@ -33,13 +33,32 @@ Contributors
 - Robert Niederreiter (Author)
 
 
+TODO
+====
+
+- Suppress lifecycle events in ``_create_child_by_factory``.
+
+- Read ``fs_mode`` from filesystem if not set on ``File`` or ``Directory``.
+
+- Remove ``Reference`` plumbing behavior from default ``File`` and
+  ``Directory`` implementations.
+
+- Introduce flag on ``DirectoryStorage`` to turn off RAM caching of children.
+
+- Introduce strict mode which prevents fallback ``File`` creation if file
+  factory raises ``TypeError``.
+
+
 Changes
 =======
 
 0.7 (unreleased)
 ----------------
 
-- No changes yet.
+- Remove ``backup`` option from ``IDirectory`` entirely. It never really worked
+  properly and conceptually ``IDirectory`` interface is the wrong place for
+  handling backups of files.
+  [rnix, 2017-06-04]
 
 
 0.6

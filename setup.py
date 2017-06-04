@@ -39,10 +39,10 @@ setup(
     ],
     extras_require={
         'test': [
-            'interlude',
             'zope.configuration',
         ]
     },
+    test_suite='node.ext.directory.tests',
     entry_points="""
     """
 )

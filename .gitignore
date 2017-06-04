@@ -14,5 +14,8 @@
 /include/
 /lib/
 /local/
+/py2/
+/py3/
+/pypy/
 /pip-selfcheck.json
 
