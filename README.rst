@@ -36,6 +36,8 @@ Contributors
 TODO
 ====
 
+- Use regular expressions for child factories if desired.
+
 - Suppress lifecycle events in ``_create_child_by_factory``.
 
 - Read ``fs_mode`` from filesystem if not set on ``File`` or ``Directory``.
@@ -55,8 +57,8 @@ Changes
 0.7 (unreleased)
 ----------------
 
-- Remove ``backup`` option from ``IDirectory`` entirely. It never really worked
-  properly and conceptually ``IDirectory`` interface is the wrong place for
+- Remove ``backup`` option from ``IDirectory`` interface. It never really
+  worked properly and conceptually ``IDirectory`` is the wrong place for
   handling backups of files.
   [rnix, 2017-06-04]
 

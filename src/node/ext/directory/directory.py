@@ -4,6 +4,7 @@ from node.behaviors import DefaultInit
 from node.behaviors import DictStorage
 from node.behaviors import Nodify
 from node.behaviors import Reference
+from node.compat import IS_PY2
 from node.ext.directory.events import FileAddedEvent
 from node.ext.directory.interfaces import IDirectory
 from node.ext.directory.interfaces import IFile
@@ -270,8 +271,9 @@ class DirectoryStorage(DictStorage):
 
     @default
     def _encode_name(self, name):
-        if isinstance(name, unicode):
-            name = name.encode(self.fs_encoding)
+        name = name.encode(self.fs_encoding) \
+            if IS_PY2 and isinstance(name, unicode) \
+            else name
         return name
 
     @default
@@ -279,7 +281,7 @@ class DirectoryStorage(DictStorage):
         def match(keys, key):
             keys = sorted(
                 keys,
-                cmp=lambda x, y: len(x) > len(y) and 1 or -1,
+                key=lambda x: len(x),
                 reverse=True
             )
             for possible in keys:

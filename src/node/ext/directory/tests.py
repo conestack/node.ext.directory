@@ -4,6 +4,7 @@ from node.behaviors import DefaultInit
 from node.behaviors import DictStorage
 from node.behaviors import Nodify
 from node.behaviors import Reference
+from node.compat import IS_PY2
 from node.ext.directory import Directory
 from node.ext.directory import File
 from node.ext.directory import MODE_BINARY
@@ -52,6 +53,10 @@ class DummyLogger(object):
 
 
 dummy_logger = DummyLogger()
+
+
+def _oct(val):
+    return '0' + val if IS_PY2 else '0o' + val
 
 
 class TestDirectory(NodeTestCase):
@@ -128,16 +133,16 @@ class TestDirectory(NodeTestCase):
     def test_file_permissions(self):
         filepath = os.path.join(self.tempdir, 'file.txt')
         file = File(filepath)
-        file.fs_mode = 0644
+        file.fs_mode = 0o644
         file.direct_sync = True
 
         file()
         self.assertTrue(os.path.exists(filepath))
-        self.assertEqual(oct(os.stat(filepath).st_mode & 0777), '0644')
+        self.assertEqual(oct(os.stat(filepath).st_mode & 0o777), _oct('644'))
 
-        file.fs_mode = 0600
+        file.fs_mode = 0o600
         file()
-        self.assertEqual(oct(os.stat(filepath).st_mode & 0777), '0600')
+        self.assertEqual(oct(os.stat(filepath).st_mode & 0o777), _oct('600'))
 
     def test_file_with_unicode_name(self):
         directory = Directory(name=self.tempdir)
@@ -227,12 +232,20 @@ class TestDirectory(NodeTestCase):
         directory = Directory(name=self.tempdir, factories={
             '.txt': broken_factory
         })
+
         expected = '<File object \'file.txt\' at '
         self.assertTrue(str(directory['file.txt']).startswith(expected))
-        self.assertEqual(dummy_logger.messages, [
+
+        expected = (
             'ERROR: File creation by factory failed. Fall back to ``File``. '
-            'Reason: broken_factory() takes exactly 1 argument (0 given)'
-        ])
+            'Reason: {}'.format((
+                'broken_factory() takes exactly 1 argument (0 given)'
+            ) if IS_PY2 else (
+                'broken_factory() missing 1 required positional argument: '
+                '\'param\''
+            ))
+        )
+        self.assertEqual(dummy_logger.messages, [expected])
 
         # Create directory and read already created file by default factory
         directory = Directory(name=self.tempdir)
@@ -287,13 +300,13 @@ class TestDirectory(NodeTestCase):
         dirpath = os.path.join(self.tempdir, 'root')
         directory = Directory(name=dirpath)
 
-        directory.fs_mode = 0750
+        directory.fs_mode = 0o750
         directory()
-        self.assertEqual(oct(os.stat(dirpath).st_mode & 0777), '0750')
+        self.assertEqual(oct(os.stat(dirpath).st_mode & 0o777), _oct('750'))
 
-        directory.fs_mode = 0700
+        directory.fs_mode = 0o700
         directory()
-        self.assertEqual(oct(os.stat(dirpath).st_mode & 0777), '0700')
+        self.assertEqual(oct(os.stat(dirpath).st_mode & 0o777), _oct('700'))
 
     def test_add_sub_directories(self):
         # Create a directory and add sub directories
@@ -381,24 +394,24 @@ class TestDirectory(NodeTestCase):
 
     def test_sub_directory_permissions(self):
         directory = Directory(name=os.path.join(self.tempdir, 'root'))
-        directory.fs_mode = 0777
+        directory.fs_mode = 0o777
 
         subdir1 = directory['subdir1'] = Directory()
-        subdir1.fs_mode = 0770
+        subdir1.fs_mode = 0o770
 
         subdir2 = directory['subdir2'] = Directory()
-        subdir2.fs_mode = 0755
+        subdir2.fs_mode = 0o755
 
         directory()
 
         dir_path = os.path.join(*directory.fs_path)
-        self.assertEqual(oct(os.stat(dir_path).st_mode & 0777), '0777')
+        self.assertEqual(oct(os.stat(dir_path).st_mode & 0o777), _oct('777'))
 
-        subdir1_path = os.path.join(*subdir1.fs_path)
-        self.assertEqual(oct(os.stat(subdir1_path).st_mode & 0777), '0770')
+        dir_path = os.path.join(*subdir1.fs_path)
+        self.assertEqual(oct(os.stat(dir_path).st_mode & 0o777), _oct('770'))
 
-        subdir2_path = os.path.join(*subdir2.fs_path)
-        self.assertEqual(oct(os.stat(subdir2_path).st_mode & 0777), '0755')
+        dir_path = os.path.join(*subdir2.fs_path)
+        self.assertEqual(oct(os.stat(dir_path).st_mode & 0o777), _oct('755'))
 
         # XXX: read directory again, permission should be read from file system
         #      if fs_mode not set explicitely
