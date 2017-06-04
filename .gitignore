@@ -4,8 +4,11 @@
 *.pyo
 *.wpr
 *~
+/.coverage
+/pip-selfcheck.json
 /bin/
 /coverage/
+/htmlcov/
 /develop-eggs/
 /devsrc/
 /dist/
@@ -17,5 +20,4 @@
 /py2/
 /py3/
 /pypy/
-/pip-selfcheck.json
 

@@ -1,3 +1,4 @@
+==================
 node.ext.directory
 ==================
 
@@ -19,12 +20,23 @@ TestCoverage
 
 Summary of the test coverage report::
 
-    lines   cov%   module
-        7   100%   node.ext.directory.__init__
-      227   100%   node.ext.directory.directory
-        5   100%   node.ext.directory.events
-       34   100%   node.ext.directory.interfaces
-       13   100%   node.ext.directory.tests
+    Name                                                    Stmts   Miss  Cover
+    ---------------------------------------------------------------------------
+    src/node/ext/directory/__init__.py                          7      0   100%
+    src/node/ext/directory/directory.py                       209      0   100%
+    src/node/ext/directory/events.py                            5      0   100%
+    src/node/ext/directory/interfaces.py                       23      0   100%
+    src/node/ext/directory/tests.py                           306      0   100%
+    ---------------------------------------------------------------------------
+    TOTAL                                                     550      0   100%
+
+
+Python Versions
+===============
+
+- Python 2.7, 3.3+, pypy
+
+- May work with other versions (untested)
 
 
 Contributors
@@ -35,6 +47,8 @@ Contributors
 
 TODO
 ====
+
+- Documentation.
 
 - Use regular expressions for child factories if desired.
 

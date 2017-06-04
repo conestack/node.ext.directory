@@ -18,6 +18,7 @@ import node.ext.directory
 import os
 import shutil
 import tempfile
+import unittest
 
 
 class DummyLogger(object):
@@ -38,12 +39,6 @@ class DummyLogger(object):
         self.messages.append(
             '{0}: {1}'.format(self.log_levels[level], message).strip()
         )
-
-    def debug(self, message):
-        self.log(logging.DEBUG, message)
-
-    def info(self, message):
-        self.log(logging.INFO, message)
 
     def warning(self, message):
         self.log(logging.WARNING, message)
@@ -124,7 +119,7 @@ class TestDirectory(NodeTestCase):
         err = self.expect_error(RuntimeError, set_lines_fails)
         self.assertEqual(str(err), 'Cannot write lines to binary file.')
 
-        file.data = '\x00\x00'
+        file.data = b'\x00\x00'
         file()
         with open(filepath) as f:
             out = f.read()
@@ -148,11 +143,14 @@ class TestDirectory(NodeTestCase):
         directory = Directory(name=self.tempdir)
         directory[u'ä'] = File()
         directory()
-        self.assertEqual(os.listdir(self.tempdir), ['\xc3\xa4'])
+
+        expected = os.listdir(self.tempdir)[0]
+        expected = expected.decode('utf-8') if IS_PY2 else expected
+        self.assertEqual(expected, u'ä')
 
         directory = Directory(name=self.tempdir)
-        expected = '<File object \'ä\' at '
-        self.assertTrue(str(directory[u'ä']).startswith(expected))
+        expected = '\xc3\xa4' if IS_PY2 else u'ä'
+        self.assertEqual(directory[u'ä'].name, expected)
 
     @patch(directory, 'logger', dummy_logger)
     def test_file_factories(self):
@@ -166,10 +164,10 @@ class TestDirectory(NodeTestCase):
         self.assertEqual(dir._factory_for_ending('foo'), None)
 
         def dummy_txt_factory():
-            pass
+            pass                                              # pragma no cover
 
         def dummy_foo_factory():
-            pass
+            pass                                              # pragma no cover
 
         node.ext.directory.file_factories['.txt'] = dummy_txt_factory
         node.ext.directory.file_factories['foo.txt'] = dummy_foo_factory
@@ -177,7 +175,7 @@ class TestDirectory(NodeTestCase):
         self.assertEqual(dir._factory_for_ending('foo.txt'), dummy_foo_factory)
 
         def dummy_local_txt_factory():
-            pass
+            pass                                              # pragma no cover
 
         dir.factories['.txt'] = dummy_local_txt_factory
         self.assertEqual(
@@ -190,7 +188,7 @@ class TestDirectory(NodeTestCase):
         )
 
         def dummy_local_foo_factory():
-            pass
+            pass                                              # pragma no cover
 
         dir.factories['foo.txt'] = dummy_local_foo_factory
         self.assertEqual(
@@ -227,7 +225,7 @@ class TestDirectory(NodeTestCase):
         self.assertTrue(str(directory['file.txt']).startswith(expected))
 
         def broken_factory(param):
-            return SaneFile()
+            return SaneFile()                                 # pragma no cover
 
         directory = Directory(name=self.tempdir, factories={
             '.txt': broken_factory
