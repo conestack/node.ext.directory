@@ -24,7 +24,7 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.6'
     ],
     keywords='',
     author='BlueDynamics Alliance',
@@ -40,7 +40,7 @@ setup(
         'setuptools',
         'node',
         'plumber',
-        'zope.interface',
+        'zope.interface'
     ],
     extras_require={
         'test': [
