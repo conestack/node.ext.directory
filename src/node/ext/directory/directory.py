@@ -13,6 +13,7 @@ from node.ext.directory.interfaces import MODE_TEXT
 from node.interfaces import IRoot
 from node.locking import TreeLock
 from node.locking import locktree
+from plumber import Behavior
 from plumber import default
 from plumber import finalize
 from plumber import plumbing
@@ -27,9 +28,38 @@ import shutil
 logger = logging.getLogger('node.ext.directory')
 
 
+def _fs_path(ob):
+    # Use fs_path if provided by ob, otherwise fallback to path
+    if hasattr(ob, 'fs_path'):
+        return ob.fs_path
+    return ob.path
+
+
+def _fs_mode(ob):
+    fs_path = os.path.join(*_fs_path(ob))
+    if not os.path.exists(fs_path):
+        return None
+    return os.stat(fs_path).st_mode & 0o777
+
+
+class _FSModeMixin(Behavior):
+
+    def _get_fs_mode(self):
+        if not hasattr(self, '_fs_mode'):
+            fs_mode = _fs_mode(self)
+            if fs_mode is None:
+                return None
+            self._fs_mode = fs_mode
+        return self._fs_mode
+
+    def _set_fs_mode(self, mode):
+        self._fs_mode = mode
+
+    fs_mode = default(property(_get_fs_mode, _set_fs_mode))
+
+
 @implementer(IFile)
-class FileStorage(DictStorage):
-    fs_mode = default(None)
+class FileStorage(DictStorage, _FSModeMixin):
     direct_sync = default(False)
 
     def _get_mode(self):
@@ -48,14 +78,10 @@ class FileStorage(DictStorage):
                 self._data = None
             else:
                 self._data = ''
-            # Use fs_path if provided by child, otherwise fallback to path
-            if hasattr(self, 'fs_path'):
-                fs_path = self.fs_path
-            else:
-                fs_path = self.path
-            if os.path.exists(os.path.sep.join(fs_path)):
+            file_path = os.path.join(*_fs_path(self))
+            if os.path.exists(file_path):
                 mode = self.mode == MODE_BINARY and 'rb' or 'r'
-                with open(os.path.sep.join(fs_path), mode) as file:
+                with open(file_path, mode) as file:
                     self._data = file.read()
         return self._data
 
@@ -89,12 +115,7 @@ class FileStorage(DictStorage):
     @finalize
     @locktree
     def __call__(self):
-        # Use fs_path if provided by child, otherwise fallback to path
-        if hasattr(self, 'fs_path'):
-            fs_path = self.fs_path
-        else:
-            fs_path = self.path
-        file_path = os.path.join(*fs_path)
+        file_path = os.path.join(*_fs_path(self))
         exists = os.path.exists(file_path)
         # Only write file if it's data has changed or not exists yet
         if hasattr(self, '_changed') or not exists:
@@ -105,8 +126,9 @@ class FileStorage(DictStorage):
                     file.flush()
                     os.fsync(file.fileno())
         # Change file system mode if set
-        if self.fs_mode is not None:
-            os.chmod(file_path, self.fs_mode)
+        fs_mode = self.fs_mode
+        if fs_mode is not None:
+            os.chmod(file_path, fs_mode)
 
 
 @plumbing(
@@ -124,9 +146,8 @@ file_factories = dict()
 
 
 @implementer(IDirectory)
-class DirectoryStorage(DictStorage):
+class DirectoryStorage(DictStorage, _FSModeMixin):
     fs_encoding = default('utf-8')
-    fs_mode = default(None)
     ignores = default(list())
     default_file_factory = default(File)
 
@@ -178,27 +199,22 @@ class DirectoryStorage(DictStorage):
                 if e.errno != 17:
                     raise e                                   # pragma no cover
             # Change file system mode if set
-            if self.fs_mode is not None:
-                os.chmod(dir_path, self.fs_mode)
+            fs_mode = self.fs_mode
+            if fs_mode is not None:
+                os.chmod(dir_path, fs_mode)
         while self._deleted:
             name = self._deleted.pop()
-            abspath = os.path.join(*self.fs_path + [name])
-            if os.path.exists(abspath):
-                if os.path.isdir(abspath):
-                    shutil.rmtree(abspath)
+            abs_path = os.path.join(*self.fs_path + [name])
+            if os.path.exists(abs_path):
+                if os.path.isdir(abs_path):
+                    shutil.rmtree(abs_path)
                 else:
-                    os.remove(abspath)
+                    os.remove(abs_path)
         for name, target in self.items():
             if IDirectory.providedBy(target):
                 target()
             elif IFile.providedBy(target):
                 target()
-                # Use fs_path if provided by child, otherwise fallback to path
-                if hasattr(target, 'fs_path'):
-                    fs_path = target.fs_path
-                else:
-                    fs_path = target.path
-                abspath = os.path.join(*fs_path)
 
     @finalize
     def __setitem__(self, name, value):
@@ -207,6 +223,13 @@ class DirectoryStorage(DictStorage):
         name = self._encode_name(name)
         if IFile.providedBy(value) or IDirectory.providedBy(value):
             self.storage[name] = value
+            # XXX: This event is currently used in node.ext.zcml and
+            #      node.ext.python to trigger parsing. But this behavior
+            #      requires the event to be triggered on __getitem__ which is
+            #      actually not how life cycle events shall behave. Fix in
+            #      node.ext.zcml and node.ext.python, remove event notification
+            #      here, use node.behaviors.Lifecycle and suppress event
+            #      notification in self._create_child_by_factory
             objectEventNotify(FileAddedEvent(value))
             return
         raise ValueError('Unknown child node.')

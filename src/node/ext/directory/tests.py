@@ -68,10 +68,6 @@ class DummyLogger(object):
 dummy_logger = DummyLogger()
 
 
-def _oct(val):
-    return '0' + val if IS_PY2 else '0o' + val
-
-
 ###############################################################################
 # Tests
 ###############################################################################
@@ -92,7 +88,7 @@ class TestDirectory(NodeTestCase):
 
     def test_file_persistance(self):
         filepath = os.path.join(self.tempdir, 'file.txt')
-        file = File(filepath)
+        file = File(name=filepath)
         file.direct_sync = True
         self.assertFalse(os.path.exists(filepath))
         file()
@@ -104,7 +100,7 @@ class TestDirectory(NodeTestCase):
 
     def test_file_mode_text(self):
         filepath = os.path.join(self.tempdir, 'file.txt')
-        file = File(filepath)
+        file = File(name=filepath)
         file.direct_sync = True
 
         self.assertEqual(file.mode, MODE_TEXT)
@@ -117,7 +113,7 @@ class TestDirectory(NodeTestCase):
             out = f.readlines()
         self.assertEqual(out, ['abc\n', 'def'])
 
-        file = File(filepath)
+        file = File(name=filepath)
         self.assertEqual(file.data, 'abc\ndef')
         self.assertEqual(file.lines, ['abc', 'def'])
 
@@ -133,7 +129,7 @@ class TestDirectory(NodeTestCase):
         class BinaryFile(File):
             mode = MODE_BINARY
 
-        file = BinaryFile(filepath)
+        file = BinaryFile(name=filepath)
         self.assertEqual(file.data, None)
 
         err = self.expect_error(RuntimeError, lambda: file.lines)
@@ -152,17 +148,22 @@ class TestDirectory(NodeTestCase):
 
     def test_file_permissions(self):
         filepath = os.path.join(self.tempdir, 'file.txt')
-        file = File(filepath)
+        file = File(name=filepath)
+        self.assertEqual(file.fs_mode, None)
+
         file.fs_mode = 0o644
         file.direct_sync = True
 
         file()
         self.assertTrue(os.path.exists(filepath))
-        self.assertEqual(oct(os.stat(filepath).st_mode & 0o777), _oct('644'))
+        self.assertEqual(os.stat(filepath).st_mode & 0o777, 0o644)
 
         file.fs_mode = 0o600
         file()
-        self.assertEqual(oct(os.stat(filepath).st_mode & 0o777), _oct('600'))
+        self.assertEqual(os.stat(filepath).st_mode & 0o777, 0o600)
+
+        file = File(name=filepath)
+        self.assertEqual(file.fs_mode, 0o600)
 
     def test_file_with_unicode_name(self):
         directory = Directory(name=self.tempdir)
@@ -322,14 +323,18 @@ class TestDirectory(NodeTestCase):
     def test_directory_permissions(self):
         dirpath = os.path.join(self.tempdir, 'root')
         directory = Directory(name=dirpath)
+        self.assertEqual(directory.fs_mode, None)
 
         directory.fs_mode = 0o750
         directory()
-        self.assertEqual(oct(os.stat(dirpath).st_mode & 0o777), _oct('750'))
+        self.assertEqual(os.stat(dirpath).st_mode & 0o777, 0o750)
 
         directory.fs_mode = 0o700
         directory()
-        self.assertEqual(oct(os.stat(dirpath).st_mode & 0o777), _oct('700'))
+        self.assertEqual(os.stat(dirpath).st_mode & 0o777, 0o700)
+
+        directory = Directory(name=dirpath)
+        self.assertEqual(directory.fs_mode, 0o700)
 
     def test_add_sub_directories(self):
         # Create a directory and add sub directories
@@ -428,18 +433,18 @@ class TestDirectory(NodeTestCase):
         directory()
 
         dir_path = os.path.join(*directory.fs_path)
-        self.assertEqual(oct(os.stat(dir_path).st_mode & 0o777), _oct('777'))
+        self.assertEqual(os.stat(dir_path).st_mode & 0o777, 0o777)
 
         dir_path = os.path.join(*subdir1.fs_path)
-        self.assertEqual(oct(os.stat(dir_path).st_mode & 0o777), _oct('770'))
+        self.assertEqual(os.stat(dir_path).st_mode & 0o777, 0o770)
 
         dir_path = os.path.join(*subdir2.fs_path)
-        self.assertEqual(oct(os.stat(dir_path).st_mode & 0o777), _oct('755'))
+        self.assertEqual(os.stat(dir_path).st_mode & 0o777, 0o755)
 
-        # XXX: read directory again, permission should be read from file system
-        #      if fs_mode not set explicitely
         directory = Directory(name=os.path.join(self.tempdir, 'root'))
-        self.assertEqual(directory.fs_mode, None)
+        self.assertEqual(directory.fs_mode, 0o777)
+        self.assertEqual(directory['subdir1'].fs_mode, 0o770)
+        self.assertEqual(directory['subdir2'].fs_mode, 0o755)
 
     def test_add_invalid_child(self):
         # Add invalid child node
