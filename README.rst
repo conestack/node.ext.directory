@@ -26,9 +26,9 @@ Summary of the test coverage report::
     src/node/ext/directory/directory.py                       209      0   100%
     src/node/ext/directory/events.py                            5      0   100%
     src/node/ext/directory/interfaces.py                       23      0   100%
-    src/node/ext/directory/tests.py                           306      0   100%
+    src/node/ext/directory/tests.py                           329      0   100%
     ---------------------------------------------------------------------------
-    TOTAL                                                     550      0   100%
+    TOTAL                                                     573      0   100%
 
 
 Python Versions
@@ -52,7 +52,10 @@ TODO
 
 - Use regular expressions for child factories if desired.
 
-- Suppress lifecycle events in ``_create_child_by_factory``.
+- Remove lifecycle event notification on ``__setitem__`` in directory. Use
+  ``node.behaviors.Lifecycle`` instead
+
+- Suppress lifecycle events in ``_create_child_by_factory``?.
 
 - Read ``fs_mode`` from filesystem if not set on ``File`` or ``Directory``.
 
