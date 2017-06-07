@@ -1,3 +1,4 @@
+==================
 node.ext.directory
 ==================
 
@@ -8,7 +9,124 @@ Filesystem directory abstraction based on
 Usage
 =====
 
-Write me (or read tests).
+Create new file
+---------------
+
+.. code-block:: python
+
+    from node.ext.directory import File
+
+    file_path = 'file.txt'
+    f = File(name=file_path)
+
+    # set contents via data attribute
+    f.data = 'data\n'
+
+    # set contents via lines attribute
+    f.lines = ['data']
+
+    # set permissions
+    f.fs_mode = 0o644
+
+    # persist
+    f()
+
+
+Read existing file
+------------------
+
+.. code-block:: python
+
+    file_path = 'file.txt'
+    f = File(name=file_path)
+
+    assert(f.data == 'data\n')
+    assert(f.lines == ['data'])
+    assert(f.fs_mode == 0o644)
+
+
+Files with binary data
+----------------------
+
+.. code-block:: python
+
+    from node.ext.directory import MODE_BINARY
+
+    file_path = 'file.txt'
+    f = File(name=file_path)
+    f.mode = MODE_BINARY
+
+    f.data = b'\x00\x00'
+
+    assert(f.data == b'\x00\x00')
+
+    # lines property won't work if file in binary mode
+    f.lines  # raises RuntimeError
+
+
+Create directory
+----------------
+
+.. code-block:: python
+
+    from node.ext.directory import Directory
+
+    dir_path = '.'
+    d = Directory(name=dir_path)
+
+    # add subdirectories and files
+    d['sub'] = Directory()
+    d['file.txt'] = File()
+
+    # set permissions for directory
+    d['sub'].fs_mode = 0o755
+
+    # persist
+    d()
+
+
+Read existing directory
+-----------------------
+
+.. code-block:: python
+
+    dir_path = '.'
+    d = Directory(name=dir_path)
+
+.. code-block:: pycon
+
+    >>> d.printtree()
+    <class 'node.ext.directory.directory.Directory'>: .
+      <class 'node.ext.directory.directory.File'>: file.txt
+      <class 'node.ext.directory.directory.Directory'>: sub
+
+
+Define file factories
+---------------------
+
+.. code-block:: python
+
+    from node.ext import directory
+
+    class PyFile(File):
+        pass
+
+    # set global factories
+    directory.file_factories['.py'] = PyFile
+
+    # set local factories
+    d = Directory(name='.', factories={'.py': PyFile})
+
+.. code-block:: pycon
+
+    # when reading .py files, PyFile is used to instanciate children
+    >>> with open('foo.py', 'w') as f:
+    ...     f.write('#')
+
+    >>> d = Directory(name='.', factories={'.py': PyFile})
+    >>> d.printtree()
+    <class 'node.ext.directory.directory.Directory'>: .
+      <class '...PyFile'>: foo.py
 
 
 TestCoverage
@@ -19,12 +137,23 @@ TestCoverage
 
 Summary of the test coverage report::
 
-    lines   cov%   module
-        7   100%   node.ext.directory.__init__
-      227   100%   node.ext.directory.directory
-        5   100%   node.ext.directory.events
-       34   100%   node.ext.directory.interfaces
-       13   100%   node.ext.directory.tests
+    Name                                                    Stmts   Miss  Cover
+    ---------------------------------------------------------------------------
+    src/node/ext/directory/__init__.py                          7      0   100%
+    src/node/ext/directory/directory.py                       221      0   100%
+    src/node/ext/directory/events.py                            5      0   100%
+    src/node/ext/directory/interfaces.py                       23      0   100%
+    src/node/ext/directory/tests.py                           335      0   100%
+    ---------------------------------------------------------------------------
+    TOTAL                                                     591      0   100%
+
+
+Python Versions
+===============
+
+- Python 2.7, 3.3+, pypy
+
+- May work with other versions (untested)
 
 
 Contributors
@@ -33,13 +162,46 @@ Contributors
 - Robert Niederreiter (Author)
 
 
+TODO
+====
+
+- Documentation.
+
+- Remove lifecycle event notification on ``__setitem__`` in directory. Use
+  ``node.behaviors.Lifecycle`` instead
+
+- Suppress lifecycle events in ``_create_child_by_factory``.
+
+- Remove ``Reference`` plumbing behavior from default ``File`` and
+  ``Directory`` implementations.
+
+- Rename ``DirectoryStorage.factories`` to ``DirectoryStorage.file_factories``.
+
+- Use regular expressions for child factories if desired.
+
+- Introduce flag on ``DirectoryStorage`` to turn off RAM caching of children.
+
+- Introduce strict mode which prevents fallback ``File`` creation if file
+  factory raises ``TypeError``.
+
+
 Changes
 =======
 
 0.7 (unreleased)
 ----------------
 
-- No changes yet.
+- Python 3 support.
+  [rnix, 2017-06-06]
+
+- ``fs_mode`` is read from filesystem if file or directory exists and
+  fs_mode not set explicitely.
+  [rnix, 2017-06-06]
+
+- Remove ``backup`` option from ``IDirectory`` interface. It never really
+  worked properly and conceptually ``IDirectory`` is the wrong place for
+  handling backups of files.
+  [rnix, 2017-06-04]
 
 
 0.6

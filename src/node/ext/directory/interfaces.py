@@ -44,9 +44,6 @@ class IDirectory(INode, ICallable):
 
     fs_encoding = Attribute('Filesystem encoding. Defaults to UTF-8')
 
-    backup = Attribute(
-        'Create backup of handled files. Defaults to False')
-
     child_directory_factory = Attribute(
         'Factory creating concrete node instances for directory children')
 

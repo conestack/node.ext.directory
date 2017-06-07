@@ -4,6 +4,7 @@ from node.behaviors import DefaultInit
 from node.behaviors import DictStorage
 from node.behaviors import Nodify
 from node.behaviors import Reference
+from node.compat import IS_PY2
 from node.ext.directory.events import FileAddedEvent
 from node.ext.directory.interfaces import IDirectory
 from node.ext.directory.interfaces import IFile
@@ -12,67 +13,101 @@ from node.ext.directory.interfaces import MODE_TEXT
 from node.interfaces import IRoot
 from node.locking import TreeLock
 from node.locking import locktree
+from plumber import Behavior
 from plumber import default
 from plumber import finalize
 from plumber import plumbing
 from zope.component.event import objectEventNotify
 from zope.interface import alsoProvides
 from zope.interface import implementer
+import logging
 import os
 import shutil
 
 
+logger = logging.getLogger('node.ext.directory')
+
+
+def _fs_path(ob):
+    # Use fs_path if provided by ob, otherwise fallback to path
+    if hasattr(ob, 'fs_path'):
+        return ob.fs_path
+    return ob.path
+
+
+def _fs_mode(ob):
+    fs_path = os.path.join(*_fs_path(ob))
+    if not os.path.exists(fs_path):
+        return None
+    return os.stat(fs_path).st_mode & 0o777
+
+
+class _FSModeMixin(Behavior):
+
+    @property
+    def fs_mode(self):
+        if not hasattr(self, '_fs_mode'):
+            fs_mode = _fs_mode(self)
+            if fs_mode is None:
+                return None
+            self._fs_mode = fs_mode
+        return self._fs_mode
+
+    @default
+    @fs_mode.setter
+    def fs_mode(self, mode):
+        self._fs_mode = mode
+
+
 @implementer(IFile)
-class FileStorage(DictStorage):
-    fs_mode = default(None)
+class FileStorage(DictStorage, _FSModeMixin):
     direct_sync = default(False)
 
-    def _get_mode(self):
+    @property
+    def mode(self):
         if not hasattr(self, '_mode'):
             self.mode = MODE_TEXT
         return self._mode
 
-    def _set_mode(self, mode):
+    @default
+    @mode.setter
+    def mode(self, mode):
         self._mode = mode
 
-    mode = default(property(_get_mode, _set_mode))
-
-    def _get_data(self):
+    @property
+    def data(self):
         if not hasattr(self, '_data'):
             if self.mode == MODE_BINARY:
                 self._data = None
             else:
                 self._data = ''
-            # Use fs_path if provided by child, otherwise fallback to path
-            if hasattr(self, 'fs_path'):
-                fs_path = self.fs_path
-            else:
-                fs_path = self.path
-            if os.path.exists(os.path.sep.join(fs_path)):
+            file_path = os.path.join(*_fs_path(self))
+            if os.path.exists(file_path):
                 mode = self.mode == MODE_BINARY and 'rb' or 'r'
-                with open(os.path.sep.join(fs_path), mode) as file:
+                with open(file_path, mode) as file:
                     self._data = file.read()
         return self._data
 
-    def _set_data(self, data):
+    @default
+    @data.setter
+    def data(self, data):
         setattr(self, '_changed', True)
         self._data = data
 
-    data = default(property(_get_data, _set_data))
-
-    def _get_lines(self):
+    @property
+    def lines(self):
         if self.mode == MODE_BINARY:
-            raise RuntimeError(u"Cannot read lines from binary file.")
+            raise RuntimeError('Cannot read lines from binary file.')
         if not self.data:
             return []
         return self.data.split('\n')
 
-    def _set_lines(self, lines):
+    @default
+    @lines.setter
+    def lines(self, lines):
         if self.mode == MODE_BINARY:
-            raise RuntimeError(u"Cannot write lines to binary file.")
+            raise RuntimeError('Cannot write lines to binary file.')
         self.data = '\n'.join(lines)
-
-    lines = default(property(_get_lines, _set_lines))
 
     @default
     @property
@@ -84,12 +119,7 @@ class FileStorage(DictStorage):
     @finalize
     @locktree
     def __call__(self):
-        # Use fs_path if provided by child, otherwise fallback to path
-        if hasattr(self, 'fs_path'):
-            fs_path = self.fs_path
-        else:
-            fs_path = self.path
-        file_path = os.path.join(*fs_path)
+        file_path = os.path.join(*_fs_path(self))
         exists = os.path.exists(file_path)
         # Only write file if it's data has changed or not exists yet
         if hasattr(self, '_changed') or not exists:
@@ -100,14 +130,15 @@ class FileStorage(DictStorage):
                     file.flush()
                     os.fsync(file.fileno())
         # Change file system mode if set
-        if self.fs_mode is not None:
-            os.chmod(file_path, self.fs_mode)
+        fs_mode = self.fs_mode
+        if fs_mode is not None:
+            os.chmod(file_path, fs_mode)
 
 
 @plumbing(
     Adopt,
     DefaultInit,
-    Reference,
+    Reference,  # XXX: remove from default file
     Nodify,
     FileStorage)
 class File(object):
@@ -119,14 +150,12 @@ file_factories = dict()
 
 
 @implementer(IDirectory)
-class DirectoryStorage(DictStorage):
+class DirectoryStorage(DictStorage, _FSModeMixin):
     fs_encoding = default('utf-8')
-    fs_mode = default(None)
-    backup = default(True)
     ignores = default(list())
     default_file_factory = default(File)
 
-    # XXX: rename later to file_factories, keep now as is for b/c reasons
+    # XXX: rename later to file_factories, keep now as is for B/C reasons
     factories = default(dict())
 
     @default
@@ -149,7 +178,10 @@ class DirectoryStorage(DictStorage):
     def __init__(self, name=None, parent=None, backup=False, factories=dict()):
         self.__name__ = name
         self.__parent__ = parent
-        self.backup = backup
+        if backup or hasattr(self, 'backup'):
+            logger.warning(
+                '``backup`` handling has been removed from ``Directory`` '
+                'implementation as of node.ext.directory 0.7')
         # override file factories if given
         if factories:
             self.factories = factories
@@ -161,43 +193,32 @@ class DirectoryStorage(DictStorage):
         if IDirectory.providedBy(self):
             dir_path = os.path.join(*self.fs_path)
             if os.path.exists(dir_path) and not os.path.isdir(dir_path):
-                raise KeyError('Attempt to create a directory with name which '
-                               'already exists as file')
+                raise KeyError(
+                    'Attempt to create a directory with name which already '
+                    'exists as file')
             try:
                 os.mkdir(dir_path)
-            except OSError, e:
+            except OSError as e:
                 # Ignore ``already exists``.
                 if e.errno != 17:
-                    raise e                                 #pragma NO COVER
+                    raise e                                   # pragma no cover
             # Change file system mode if set
-            if self.fs_mode is not None:
-                os.chmod(dir_path, self.fs_mode)
+            fs_mode = self.fs_mode
+            if fs_mode is not None:
+                os.chmod(dir_path, fs_mode)
         while self._deleted:
             name = self._deleted.pop()
-            abspath = os.path.join(*self.fs_path + [name])
-            if os.path.exists(abspath):
-                if os.path.isdir(abspath):
-                    shutil.rmtree(abspath)
+            abs_path = os.path.join(*self.fs_path + [name])
+            if os.path.exists(abs_path):
+                if os.path.isdir(abs_path):
+                    shutil.rmtree(abs_path)
                 else:
-                    os.remove(abspath)
-                    bakpath = os.path.join(*self.fs_path + ['.%s.bak' % name])
-                    if os.path.exists(bakpath):
-                        os.remove(bakpath)
+                    os.remove(abs_path)
         for name, target in self.items():
             if IDirectory.providedBy(target):
                 target()
             elif IFile.providedBy(target):
                 target()
-                # Use fs_path if provided by child, otherwise fallback to path
-                if hasattr(target, 'fs_path'):
-                    fs_path = target.fs_path
-                else:
-                    fs_path = target.path
-                abspath = os.path.join(*fs_path)
-                if self.backup and os.path.exists(abspath):
-                    bakpath = os.path.join(
-                        *target.fs_path[:-1] + ['.%s.bak' % target.name])
-                    shutil.copyfile(abspath, bakpath)
 
     @finalize
     def __setitem__(self, name, value):
@@ -205,9 +226,14 @@ class DirectoryStorage(DictStorage):
             raise KeyError('Empty key not allowed in directories')
         name = self._encode_name(name)
         if IFile.providedBy(value) or IDirectory.providedBy(value):
-            if IDirectory.providedBy(value):
-                value.backup = self.backup
             self.storage[name] = value
+            # XXX: This event is currently used in node.ext.zcml and
+            #      node.ext.python to trigger parsing. But this behavior
+            #      requires the event to be triggered on __getitem__ which is
+            #      actually not how life cycle events shall behave. Fix in
+            #      node.ext.zcml and node.ext.python, remove event notification
+            #      here, use node.behaviors.Lifecycle and suppress event
+            #      notification in self._create_child_by_factory
             objectEventNotify(FileAddedEvent(value))
             return
         raise ValueError('Unknown child node.')
@@ -218,32 +244,35 @@ class DirectoryStorage(DictStorage):
         try:
             return self.storage[name]
         except KeyError:
-            pass
-        with TreeLock(self):
-            filepath = os.path.join(*self.fs_path + [name])
-            if os.path.exists(filepath):
-                if os.path.isdir(filepath):
-                    self[name] = self.child_directory_factory()
-                else:
-                    factory = self._factory_for_ending(name)
-                    if factory:
-                        try:
-                            # XXX: write to self.storage to suppress add event
-                            self[name] = factory()
-                        except TypeError:
-                            # happens if the factory cannot be called without 
-                            # args (e.g. .pt)
-                            # in this case we treat it as a flat file
-                            # XXX: remove try/except and fallback, for
-                            #      described case child factories are supposed
-                            #      to be used
-                            # XXX: write to self.storage to suppress add event
-                            self[name] = File()
-                    else:
-                        # default
-                        # XXX: write to self.storage to suppress add event
-                        self[name] = self.default_file_factory()
+            self._create_child_by_factory(name)
         return self.storage[name]
+
+    @default
+    @locktree
+    def _create_child_by_factory(self, name):
+        filepath = os.path.join(*self.fs_path + [name])
+        if not os.path.exists(filepath):
+            return
+        if os.path.isdir(filepath):
+            # XXX: to suppress event notify
+            self[name] = self.child_directory_factory()
+            return
+        factory = self._factory_for_ending(name)
+        if not factory:
+            # XXX: to suppress event notify
+            self[name] = self.default_file_factory()
+            return
+        try:
+            # XXX: to suppress event notify
+            self[name] = factory()
+        except TypeError as e:
+            # happens if the factory cannot be called without args, in this
+            # case we treat it as a flat file.
+            # XXX: to suppress event notify
+            logger.error(
+                'File creation by factory failed. Fall back to ``File``. '
+                'Reason: {}'.format(e))
+            self[name] = File()
 
     @finalize
     def __delitem__(self, name):
@@ -261,8 +290,6 @@ class DirectoryStorage(DictStorage):
         for key in self.storage:
             existing.add(key)
         for key in existing:
-            if self.backup and key.endswith('.bak'):
-                continue
             if key in self._deleted:
                 continue
             if key in self.ignores:
@@ -271,17 +298,19 @@ class DirectoryStorage(DictStorage):
 
     @default
     def _encode_name(self, name):
-        if isinstance(name, unicode):
-            name = name.encode(self.fs_encoding)
+        name = name.encode(self.fs_encoding) \
+            if IS_PY2 and isinstance(name, unicode) \
+            else name
         return name
 
     @default
     def _factory_for_ending(self, name):
         def match(keys, key):
-            keys = sorted(keys)
-            keys = sorted(keys,
-                          cmp=lambda x, y: len(x) > len(y) and 1 or -1,
-                          reverse=True)
+            keys = sorted(
+                keys,
+                key=lambda x: len(x),
+                reverse=True
+            )
             for possible in keys:
                 if key.endswith(possible):
                     return possible
@@ -299,7 +328,7 @@ class DirectoryStorage(DictStorage):
 
 @plumbing(
     Adopt,
-    Reference,
+    Reference,  # XXX: remove from default file
     Nodify,
     DirectoryStorage)
 class Directory(object):
