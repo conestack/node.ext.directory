@@ -44,7 +44,8 @@ def _fs_mode(ob):
 
 class _FSModeMixin(Behavior):
 
-    def _get_fs_mode(self):
+    @property
+    def fs_mode(self):
         if not hasattr(self, '_fs_mode'):
             fs_mode = _fs_mode(self)
             if fs_mode is None:
@@ -52,27 +53,29 @@ class _FSModeMixin(Behavior):
             self._fs_mode = fs_mode
         return self._fs_mode
 
-    def _set_fs_mode(self, mode):
+    @default
+    @fs_mode.setter
+    def fs_mode(self, mode):
         self._fs_mode = mode
-
-    fs_mode = default(property(_get_fs_mode, _set_fs_mode))
 
 
 @implementer(IFile)
 class FileStorage(DictStorage, _FSModeMixin):
     direct_sync = default(False)
 
-    def _get_mode(self):
+    @property
+    def mode(self):
         if not hasattr(self, '_mode'):
             self.mode = MODE_TEXT
         return self._mode
 
-    def _set_mode(self, mode):
+    @default
+    @mode.setter
+    def mode(self, mode):
         self._mode = mode
 
-    mode = default(property(_get_mode, _set_mode))
-
-    def _get_data(self):
+    @property
+    def data(self):
         if not hasattr(self, '_data'):
             if self.mode == MODE_BINARY:
                 self._data = None
@@ -85,25 +88,26 @@ class FileStorage(DictStorage, _FSModeMixin):
                     self._data = file.read()
         return self._data
 
-    def _set_data(self, data):
+    @default
+    @data.setter
+    def data(self, data):
         setattr(self, '_changed', True)
         self._data = data
 
-    data = default(property(_get_data, _set_data))
-
-    def _get_lines(self):
+    @property
+    def lines(self):
         if self.mode == MODE_BINARY:
             raise RuntimeError('Cannot read lines from binary file.')
         if not self.data:
             return []
         return self.data.split('\n')
 
-    def _set_lines(self, lines):
+    @default
+    @lines.setter
+    def lines(self, lines):
         if self.mode == MODE_BINARY:
             raise RuntimeError('Cannot write lines to binary file.')
         self.data = '\n'.join(lines)
-
-    lines = default(property(_get_lines, _set_lines))
 
     @default
     @property
