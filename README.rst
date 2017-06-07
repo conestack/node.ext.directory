@@ -188,8 +188,8 @@ TODO
 Changes
 =======
 
-0.7 (unreleased)
-----------------
+0.7
+---
 
 - Python 3 support.
   [rnix, 2017-06-06]
