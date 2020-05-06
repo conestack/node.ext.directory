@@ -1,4 +1,3 @@
-from node.base import BaseNode
 from node.behaviors import Adopt
 from node.behaviors import DefaultInit
 from node.behaviors import DictStorage
@@ -10,15 +9,12 @@ from node.ext.directory.interfaces import IDirectory
 from node.ext.directory.interfaces import IFile
 from node.ext.directory.interfaces import MODE_BINARY
 from node.ext.directory.interfaces import MODE_TEXT
-from node.interfaces import IRoot
-from node.locking import TreeLock
 from node.locking import locktree
 from plumber import Behavior
 from plumber import default
 from plumber import finalize
 from plumber import plumbing
 from zope.component.event import objectEventNotify
-from zope.interface import alsoProvides
 from zope.interface import implementer
 import logging
 import os
