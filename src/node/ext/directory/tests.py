@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-from node.behaviors import Adopt
 from node.behaviors import DefaultInit
 from node.behaviors import DictStorage
-from node.behaviors import Nodify
+from node.behaviors import MappingAdopt
+from node.behaviors import MappingNode
 from node.behaviors import Reference
 from node.compat import IS_PY2
 from node.ext.directory import Directory
+from node.ext.directory import directory
 from node.ext.directory import File
 from node.ext.directory import MODE_BINARY
 from node.ext.directory import MODE_TEXT
-from node.ext.directory import directory
 from node.ext.directory.events import IFileAddedEvent
 from node.ext.directory.interfaces import IDirectory
 from node.ext.directory.interfaces import IFile
@@ -190,10 +190,10 @@ class TestDirectory(NodeTestCase):
         self.assertEqual(dir._factory_for_ending('foo'), None)
 
         def dummy_txt_factory():
-            pass                                              # pragma no cover
+            pass  # pragma no cover
 
         def dummy_foo_factory():
-            pass                                              # pragma no cover
+            pass  # pragma no cover
 
         node.ext.directory.file_factories['.txt'] = dummy_txt_factory
         node.ext.directory.file_factories['foo.txt'] = dummy_foo_factory
@@ -201,7 +201,7 @@ class TestDirectory(NodeTestCase):
         self.assertEqual(dir._factory_for_ending('foo.txt'), dummy_foo_factory)
 
         def dummy_local_txt_factory():
-            pass                                              # pragma no cover
+            pass  # pragma no cover
 
         dir.factories['.txt'] = dummy_local_txt_factory
         self.assertEqual(
@@ -214,7 +214,7 @@ class TestDirectory(NodeTestCase):
         )
 
         def dummy_local_foo_factory():
-            pass                                              # pragma no cover
+            pass  # pragma no cover
 
         dir.factories['foo.txt'] = dummy_local_foo_factory
         self.assertEqual(
@@ -251,7 +251,7 @@ class TestDirectory(NodeTestCase):
         self.assertTrue(str(directory['file.txt']).startswith(expected))
 
         def broken_factory(param):
-            return SaneFile()                                 # pragma no cover
+            return SaneFile()  # pragma no cover
 
         directory = Directory(name=self.tempdir, factories={
             '.txt': broken_factory
@@ -306,8 +306,10 @@ class TestDirectory(NodeTestCase):
 
         directory = Directory(name=invalid_dir)
         err = self.expect_error(KeyError, directory)
-        expected = '\'Attempt to create a directory with name which already ' \
-                   'exists as file\''
+        expected = (
+            '\'Attempt to create a directory with '
+            'name which already exists as file\''
+        )
         self.assertEqual(str(err), expected)
 
     def test_directory_persistence(self):
@@ -449,10 +451,10 @@ class TestDirectory(NodeTestCase):
     def test_add_invalid_child(self):
         # Add invalid child node
         @plumbing(
-            Adopt,
+            MappingAdopt,
             DefaultInit,
             Reference,
-            Nodify,
+            MappingNode,
             DictStorage)
         class NoFile(object):
             pass
@@ -559,4 +561,4 @@ class TestDirectory(NodeTestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()                                           # pragma no cover
+    unittest.main()  # pragma no cover

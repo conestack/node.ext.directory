@@ -12,6 +12,7 @@ version = '0.8.dev0'
 shortdesc = "Filesystem directory abstraction based on nodes"
 longdesc = '\n\n'.join([read_file(name) for name in [
     'README.rst',
+    'CHANGES.rst',
     'LICENSE.rst'
 ]])
 
@@ -28,10 +29,10 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6'
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10'
     ],
     keywords='',
     author='Node Contributors',
@@ -45,7 +46,7 @@ setup(
     zip_safe=True,
     install_requires=[
         'setuptools',
-        'node',
+        'node>0.999',
         'plumber',
         'zope.interface'
     ],
@@ -54,7 +55,5 @@ setup(
             'zope.configuration',
         ]
     },
-    test_suite='node.ext.directory.tests',
-    entry_points="""
-    """
+    test_suite='node.ext.directory.tests'
 )

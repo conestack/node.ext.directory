@@ -1,7 +1,7 @@
-from node.behaviors import Adopt
 from node.behaviors import DefaultInit
 from node.behaviors import DictStorage
-from node.behaviors import Nodify
+from node.behaviors import MappingAdopt
+from node.behaviors import MappingNode
 from node.behaviors import Reference
 from node.compat import IS_PY2
 from node.ext.directory.events import FileAddedEvent
@@ -132,10 +132,10 @@ class FileStorage(DictStorage, _FSModeMixin):
 
 
 @plumbing(
-    Adopt,
+    MappingAdopt,
     DefaultInit,
     Reference,  # XXX: remove from default file
-    Nodify,
+    MappingNode,
     FileStorage)
 class File(object):
     pass
@@ -323,9 +323,9 @@ class DirectoryStorage(DictStorage, _FSModeMixin):
 
 
 @plumbing(
-    Adopt,
+    MappingAdopt,
     Reference,  # XXX: remove from default file
-    Nodify,
+    MappingNode,
     DirectoryStorage)
 class Directory(object):
     """Object mapping a file system directory.
