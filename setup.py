@@ -46,7 +46,7 @@ setup(
     zip_safe=True,
     install_requires=[
         'setuptools',
-        'node>0.999',
+        'node',
         'plumber',
         'zope.interface'
     ],
