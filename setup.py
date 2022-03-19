@@ -34,7 +34,7 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10'
     ],
-    keywords='',
+    keywords='node directory file',
     author='Node Contributors',
     author_email='dev@conestack.org',
     url='http://github.com/conestack/node.ext.directory',
@@ -45,15 +45,8 @@ setup(
     include_package_data=True,
     zip_safe=True,
     install_requires=[
-        'setuptools',
-        'node',
-        'plumber',
-        'zope.interface'
+        'node>=1.0',
+        'setuptools'
     ],
-    extras_require={
-        'test': [
-            'zope.configuration',
-        ]
-    },
     test_suite='node.ext.directory.tests'
 )

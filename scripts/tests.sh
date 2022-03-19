@@ -1,7 +1,15 @@
-#!/bin/sh
-if [ -x "$(which python)" ]; then
-    ./py2/bin/python -m unittest node.ext.directory.tests
-fi
-if [ -x "$(which python3)" ]; then
-    ./py3/bin/python -m unittest node.ext.directory.tests
-fi
+#!/bin/bash
+
+function run_tests {
+    local target=$1
+
+    if [ -e "$target" ]; then
+        ./$target/bin/python -m node.ext.directory.tests
+    else
+        echo "Target $target not found."
+    fi
+}
+
+run_tests py2
+run_tests py3
+run_tests pypy3

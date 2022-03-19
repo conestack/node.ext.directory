@@ -561,4 +561,11 @@ class TestDirectory(NodeTestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()  # pragma no cover
+    from node.ext.directory import tests
+    import sys
+
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.findTestCases(tests))
+    runner = unittest.TextTestRunner(failfast=True)
+    result = runner.run(suite)
+    sys.exit(not result.wasSuccessful())

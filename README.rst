@@ -1,3 +1,6 @@
+node.ext.directory
+==================
+
 .. image:: https://img.shields.io/pypi/v/node.ext.directory.svg
     :target: https://pypi.python.org/pypi/node.ext.directory
     :alt: Latest PyPI version
@@ -6,11 +9,13 @@
     :target: https://pypi.python.org/pypi/node.ext.directory
     :alt: Number of PyPI downloads
 
-.. image:: https://travis-ci.org/bluedynamics/node.ext.directory.svg?branch=master
-    :target: https://travis-ci.org/bluedynamics/node.ext.directory
+.. image:: https://github.com/conestack/node.ext.directory/actions/workflows/test.yaml/badge.svg
+    :target: https://github.com/conestack/node.ext.directory/actions/workflows/test.yaml
+    :alt: Test node.ext.directory
 
-.. image:: https://coveralls.io/repos/github/bluedynamics/node.ext.directory/badge.svg?branch=master
-    :target: https://coveralls.io/github/bluedynamics/node.ext.directory?branch=master
+
+Overview
+--------
 
 ``node.ext.directory`` is a node implementation for file system directories.
 
@@ -19,7 +24,7 @@ For more information about ``node`` see
 
 
 Usage
-=====
+-----
 
 Create new file:
 
@@ -134,8 +139,7 @@ when reading .py files, PyFile is used to instanciate children:
 Python Versions
 ===============
 
-- Python 2.7, 3.7+, pypy
-
+- Python 2.7, 3.7+
 - May work with other versions (untested)
 
 
