@@ -264,9 +264,6 @@ class TestDirectory(NodeTestCase):
         self.assertTrue(dummy_logger.messages[0].startswith(
             'ERROR: File creation by factory failed.'
         ))
-        self.assertTrue(dummy_logger.messages[0].find(
-            'Reason: broken_factory()'
-        ) > -1)
 
         # Create directory and read already created file by default factory
         directory = Directory(name=self.tempdir)
