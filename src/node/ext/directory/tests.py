@@ -260,16 +260,13 @@ class TestDirectory(NodeTestCase):
         expected = '<File object \'file.txt\' at '
         self.assertTrue(str(directory['file.txt']).startswith(expected))
 
-        expected = (
-            'ERROR: File creation by factory failed. Fall back to ``File``. '
-            'Reason: {}'.format((
-                'broken_factory() takes exactly 1 argument (0 given)'
-            ) if IS_PY2 else (
-                'broken_factory() missing 1 required positional argument: '
-                '\'param\''
-            ))
-        )
-        self.assertEqual(dummy_logger.messages, [expected])
+        self.assertEqual(len(dummy_logger.messages), 1)
+        self.assertTrue(dummy_logger.messages[0].startswith(
+            'ERROR: File creation by factory failed.'
+        ))
+        self.assertTrue(dummy_logger.messages[0].find(
+            'Reason: broken_factory()'
+        ) > -1)
 
         # Create directory and read already created file by default factory
         directory = Directory(name=self.tempdir)
