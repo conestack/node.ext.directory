@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.8 (unreleased)
+0.8 (2022-03-21)
 ----------------
 
 - Replace deprecated use of ``Nodify`` by ``MappingNode``.
