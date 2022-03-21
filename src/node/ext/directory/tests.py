@@ -132,12 +132,12 @@ class TestDirectory(NodeTestCase):
         file = BinaryFile(name=filepath)
         self.assertEqual(file.data, None)
 
-        err = self.expect_error(RuntimeError, lambda: file.lines)
+        err = self.expectError(RuntimeError, lambda: file.lines)
         self.assertEqual(str(err), 'Cannot read lines from binary file.')
 
         def set_lines_fails():
             file.lines = []
-        err = self.expect_error(RuntimeError, set_lines_fails)
+        err = self.expectError(RuntimeError, set_lines_fails)
         self.assertEqual(str(err), 'Cannot write lines to binary file.')
 
         file.data = b'\x00\x00'
@@ -181,7 +181,7 @@ class TestDirectory(NodeTestCase):
     @patch(directory, 'logger', dummy_logger)
     def test_file_factories(self):
         # Factories. resolved by registration length, shortest last
-        self.check_output("""\
+        self.checkOutput("""\
         {...}
         """, str(node.ext.directory.file_factories))
 
@@ -299,7 +299,7 @@ class TestDirectory(NodeTestCase):
         self.assertFalse(os.path.isdir(invalid_dir))
 
         directory = Directory(name=invalid_dir)
-        err = self.expect_error(KeyError, directory)
+        err = self.expectError(KeyError, directory)
         expected = (
             '\'Attempt to create a directory with '
             'name which already exists as file\''
@@ -338,13 +338,13 @@ class TestDirectory(NodeTestCase):
 
         def add_directory_fails():
             directory[''] = Directory()
-        err = self.expect_error(KeyError, add_directory_fails)
+        err = self.expectError(KeyError, add_directory_fails)
         self.assertEqual(str(err), '\'Empty key not allowed in directories\'')
 
         directory['subdir1'] = Directory()
         directory['subdir2'] = Directory()
 
-        self.check_output("""\
+        self.checkOutput("""\
         <class 'node.ext.directory.directory.Directory'>: /.../root
           <class 'node.ext.directory.directory.Directory'>: subdir1
           <class 'node.ext.directory.directory.Directory'>: subdir2
@@ -361,7 +361,7 @@ class TestDirectory(NodeTestCase):
         )
 
         directory = Directory(name=os.path.join(self.tempdir, 'root'))
-        self.check_output("""\
+        self.checkOutput("""\
         <class 'node.ext.directory.directory.Directory'>: /.../root
           <class 'node.ext.directory.directory.Directory'>: subdir1
           <class 'node.ext.directory.directory.Directory'>: subdir2
@@ -413,7 +413,7 @@ class TestDirectory(NodeTestCase):
 
         def __getitem__fails():
             directory['inexistent']
-        err = self.expect_error(KeyError, __getitem__fails)
+        err = self.expectError(KeyError, __getitem__fails)
         self.assertEqual(str(err), '\'inexistent\'')
 
     def test_sub_directory_permissions(self):
@@ -457,7 +457,7 @@ class TestDirectory(NodeTestCase):
 
         def add_child_fails():
             directory['unknown'] = NoFile()
-        err = self.expect_error(ValueError, add_child_fails)
+        err = self.expectError(ValueError, add_child_fails)
         self.assertEqual(str(err), 'Unknown child node.')
 
     def test_ignore_children(self):
@@ -514,7 +514,7 @@ class TestDirectory(NodeTestCase):
 
         directory()
         directory = Directory(name=os.path.join(self.tempdir, 'root'))
-        self.check_output("""\
+        self.checkOutput("""\
         <class 'node.ext.directory.directory.Directory'>: ...root
           <class 'node.ext.directory.directory.File'>: file.txt
           <class 'node.ext.directory.directory.Directory'>: subdir
@@ -529,7 +529,7 @@ class TestDirectory(NodeTestCase):
 
         directory()
         directory = Directory(name=os.path.join(self.tempdir, 'root'))
-        self.check_output("""\
+        self.checkOutput("""\
         <class 'node.ext.directory.directory.Directory'>: ...root
           <class 'node.ext.directory.directory.File'>: file.txt
         """, directory.treerepr())
