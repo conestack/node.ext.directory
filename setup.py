@@ -23,10 +23,10 @@ setup(
     description=shortdesc,
     long_description=longdesc,
     classifiers=[
+        'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: BSD License',
         'Intended Audience :: Developers',
         'Topic :: Software Development',
-        'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.7',
