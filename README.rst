@@ -14,6 +14,13 @@ node.ext.directory
     :alt: Test node.ext.directory
 
 
+Maintenance mode
+----------------
+
+This package is in maintenance mode. The successor of this package is
+`https://pypi.python.org/pypi/node.ext.fs <https://pypi.python.org/pypi/node.ext.fs>`_.
+
+
 Overview
 --------
 
@@ -21,7 +28,6 @@ Overview
 
 For more information about ``node`` see
 `https://pypi.python.org/pypi/node <https://pypi.python.org/pypi/node>`_.
-
 
 Usage
 -----
