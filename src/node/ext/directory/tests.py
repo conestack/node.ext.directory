@@ -3,7 +3,7 @@ from node.behaviors import DefaultInit
 from node.behaviors import DictStorage
 from node.behaviors import MappingAdopt
 from node.behaviors import MappingNode
-from node.behaviors import Reference
+from node.behaviors import MappingReference
 from node.compat import IS_PY2
 from node.ext.directory import Directory
 from node.ext.directory import directory
@@ -447,7 +447,7 @@ class TestDirectory(NodeTestCase):
         @plumbing(
             MappingAdopt,
             DefaultInit,
-            Reference,
+            MappingReference,
             MappingNode,
             DictStorage)
         class NoFile(object):
