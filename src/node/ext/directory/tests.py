@@ -345,7 +345,7 @@ class TestDirectory(NodeTestCase):
         directory['subdir2'] = Directory()
 
         self.checkOutput("""\
-        <class 'node.ext.directory.directory.Directory'>: /.../root
+        <class 'node.ext.directory.directory.Directory'>: ...root
           <class 'node.ext.directory.directory.Directory'>: subdir1
           <class 'node.ext.directory.directory.Directory'>: subdir2
         """, directory.treerepr())
@@ -362,7 +362,7 @@ class TestDirectory(NodeTestCase):
 
         directory = Directory(name=os.path.join(self.tempdir, 'root'))
         self.checkOutput("""\
-        <class 'node.ext.directory.directory.Directory'>: /.../root
+        <class 'node.ext.directory.directory.Directory'>: ...root
           <class 'node.ext.directory.directory.Directory'>: subdir1
           <class 'node.ext.directory.directory.Directory'>: subdir2
         """, directory.treerepr())
