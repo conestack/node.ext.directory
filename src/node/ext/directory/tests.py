@@ -146,6 +146,7 @@ class TestDirectory(NodeTestCase):
             out = f.read()
         self.assertEqual(out, '\x00\x00')
 
+    @unittest.skipIf(os.name == 'nt', 'This test is written for *nix platforms')
     def test_file_permissions(self):
         filepath = os.path.join(self.tempdir, 'file.txt')
         file = File(name=filepath)
