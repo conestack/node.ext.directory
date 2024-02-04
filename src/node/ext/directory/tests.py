@@ -418,6 +418,7 @@ class TestDirectory(NodeTestCase):
         err = self.expectError(KeyError, __getitem__fails)
         self.assertEqual(str(err), '\'inexistent\'')
 
+    @unittest.skipIf(os.name == 'nt', 'This test is written for *nix platforms')
     def test_sub_directory_permissions(self):
         directory = Directory(name=os.path.join(self.tempdir, 'root'))
         directory.fs_mode = 0o777
