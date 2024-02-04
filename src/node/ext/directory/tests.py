@@ -316,6 +316,7 @@ class TestDirectory(NodeTestCase):
         self.assertTrue(os.path.exists(dirpath))
         self.assertTrue(os.path.isdir(dirpath))
 
+    @unittest.skipIf(os.name == 'nt', 'This test is written for *nix platforms')
     def test_directory_permissions(self):
         dirpath = os.path.join(self.tempdir, 'root')
         directory = Directory(name=dirpath)
