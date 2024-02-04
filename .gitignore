@@ -1,9 +1,9 @@
-*.egg-info
+*.egg-info/
 *.pyc
-*.pyo
 /.coverage
+/.mxmake
+/.ruff_cache
 /dist/
 /htmlcov/
-/py2/
-/py3/
-/pypy3/
+/requirements-mxdev.txt
+/venv
