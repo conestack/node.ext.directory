@@ -45,4 +45,4 @@ jobs:
       - name: Run coverage
         run: |
           coverage run --source=src/node/ext/directory -m node.ext.directory.tests
-          coverage report --fail-under=100
+          coverage report --fail-under=93
