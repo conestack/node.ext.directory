@@ -4,7 +4,11 @@ Changes
 0.8.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix deprecated imports.
+  [rnix]
+
+- Add note about successor package.
+  [rnix]
 
 
 0.8 (2022-03-21)
