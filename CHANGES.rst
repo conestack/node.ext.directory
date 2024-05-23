@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.8.1 (unreleased)
+0.8.1 (2024-05-23)
 ------------------
 
 - Fix deprecated imports.
