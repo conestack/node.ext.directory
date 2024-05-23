@@ -8,7 +8,7 @@ def read_file(name):
         return f.read()
 
 
-version = '0.8.1'
+version = '0.8.2.dev0'
 shortdesc = 'Filesystem directory abstraction based on nodes'
 longdesc = '\n\n'.join([read_file(name) for name in [
     'README.rst',
