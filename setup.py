@@ -45,7 +45,7 @@ setup(
     include_package_data=True,
     zip_safe=True,
     install_requires=[
-        'node>=1.0',
+        'node>=1.0,<2.0.0',
         'setuptools'
     ],
     test_suite='node.ext.directory.tests'

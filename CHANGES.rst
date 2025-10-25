@@ -4,7 +4,8 @@ Changes
 0.8.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Pin upper versions of dependencies.
+  [rnix]
 
 
 0.8.1 (2024-05-23)
