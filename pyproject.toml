@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "node.ext.directory"
-version = "0.8.2.dev0"
+version = "2.0.0.dev0"
 description = "Filesystem directory abstraction based on nodes"
 readme = "README.rst"
 license = {text = "Simplified BSD"}
