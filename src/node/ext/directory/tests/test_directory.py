@@ -555,14 +555,3 @@ class TestDirectory(NodeTestCase):
         self.assertTrue(IFileAddedEvent.providedBy(self.handler.handled[0]))
         self.assertEqual(self.handler.handled[1].object.name, 'subdir')
         self.assertTrue(IFileAddedEvent.providedBy(self.handler.handled[1]))
-
-
-if __name__ == '__main__':
-    from node.ext.directory import tests
-    import sys
-
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.findTestCases(tests))
-    runner = unittest.TextTestRunner(failfast=True)
-    result = runner.run(suite)
-    sys.exit(not result.wasSuccessful())
